@@ -3,9 +3,11 @@ package db
 import (
 	"context"
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
+	"github.com/patrickmn/go-cache"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 )
 
 const (
@@ -28,6 +30,7 @@ func NewMongoDatabase(connectionString string) (db Database, err error) {
 		client:   client,
 		context:  context.TODO(),
 		database: DatabaseName,
+		cache:    cache.New(10*time.Minute, 15*time.Minute),
 	}, nil
 }
 
@@ -36,6 +39,7 @@ type mongoDatabase struct {
 	client   *mongo.Client
 	context  context.Context
 	database string
+	cache    *cache.Cache
 }
 
 func (mdb *mongoDatabase) shortsCollection() *mongo.Collection {
@@ -43,6 +47,11 @@ func (mdb *mongoDatabase) shortsCollection() *mongo.Collection {
 }
 
 func (mdb *mongoDatabase) FindShortenedURL(id string) (res *short.ShortURL, err error) {
+	// find in cache
+	if s, found := mdb.cache.Get(id); found {
+		return s.(*short.ShortURL), nil
+	}
+
 	filter := bson.M{
 		"id": id,
 	}
@@ -53,6 +62,12 @@ func (mdb *mongoDatabase) FindShortenedURL(id string) (res *short.ShortURL, err 
 	}
 
 	err = cursor.Decode(&res)
+
+	// save to cache
+	if err == nil {
+		mdb.cache.Set(id, res, cache.DefaultExpiration)
+	}
+
 	return
 }
 
@@ -66,5 +81,17 @@ func (mdb *mongoDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
 	opts := options.Update().SetUpsert(true)
 
 	_, err = mdb.shortsCollection().UpdateOne(mdb.context, filter, update, opts)
+
+	// save to cache
+	mdb.cache.Set(short.ID, short, cache.DefaultExpiration)
+
 	return nil
+}
+
+func (mdb *mongoDatabase) BreakCache(id string) (found bool) {
+	if _, f := mdb.cache.Get(id); f {
+		found = true
+	}
+	mdb.cache.Delete(id)
+	return
 }

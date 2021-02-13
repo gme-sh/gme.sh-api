@@ -7,4 +7,5 @@ import (
 type Database interface {
 	FindShortenedURL(id string) (res *short.ShortURL, err error)
 	SaveShortenedURL(url short.ShortURL) (err error)
+	BreakCache(id string) (found bool)
 }

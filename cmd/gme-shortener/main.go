@@ -1,17 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/web"
-	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/BurntSushi/toml"
+	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
+	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db"
+	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/web"
+	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 )
 
 const (
@@ -48,6 +50,13 @@ func main() {
 	database, err := db.NewMongoDatabase(cfg.Mongo.ApplyURI)
 	if err != nil {
 		log.Fatalln("Error connecting:", err)
+		return
+	}
+
+	client := db.NewRedisClient(cfg.Redis)
+
+	if res := client.Set(context.TODO(), "heartbeat", 1, 0); res.Err() != nil {
+		log.Fatalln("Error connecting to Redis:", res.Err())
 		return
 	}
 

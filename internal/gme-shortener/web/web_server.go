@@ -1,7 +1,7 @@
 package web
 
 import (
-	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/db"
+	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"

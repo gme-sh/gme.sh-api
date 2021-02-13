@@ -1,4 +1,4 @@
-name: Build
+name: "Build Go"
 
 on:
   push:
@@ -7,19 +7,19 @@ on:
 
 jobs:
   build:
-    name: "Build"
+    name: "Build Go"
 
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install Go
+      - name: "👉 Install Go"
         uses: actions/setup-go@v2
 
-      - name: Checkout Code
+      - name: "📝 Checkout Code"
         uses: actions/checkout@v2
 
-      - name: Install dependencies
+      - name: "🦾 Install dependencies"
         run: go get ./cmd/gme-shortener
 
-      - name: Build
+      - name: "🏗 Build"
         run: go build ./cmd/gme-shortener

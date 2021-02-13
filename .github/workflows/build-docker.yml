@@ -1,0 +1,19 @@
+name: "Build Docker"
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: "Build Go"
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "📝 Checkout Code"
+        uses: actions/checkout@v2
+
+      - name: "🏗 Docker-Compose Build"
+        run: docker-compose build

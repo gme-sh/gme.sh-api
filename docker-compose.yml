@@ -1,0 +1,20 @@
+version: "3.4"
+
+services:
+  mongo:
+    image: mongo:latest
+    restart: unless-stopped
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+
+  gmeshort:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - 1333:1336
+    environment:
+      MONGODB_STRING: "mongodb://mongo:27017"

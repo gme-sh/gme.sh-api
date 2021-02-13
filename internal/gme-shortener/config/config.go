@@ -1,7 +1,7 @@
 package config
 
 type Config struct {
-	Mongo MongoConfig
+	Mongo *MongoConfig
 }
 
 type MongoConfig struct {

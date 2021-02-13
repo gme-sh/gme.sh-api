@@ -32,10 +32,15 @@ func main() {
 	// load config
 	log.Println("└ Loading config")
 
-	var cfg config.Config
+	var cfg *config.Config
 	if _, err := toml.DecodeFile("config.toml", &cfg); err != nil {
 		log.Fatalln("Error decoding file:", err)
 		return
+	}
+
+	// Get mongo from environment
+	if mdbs := os.Getenv("MONGODB_STRING"); mdbs != "" {
+		cfg.Mongo.ApplyURI = mdbs
 	}
 
 	// connect to database

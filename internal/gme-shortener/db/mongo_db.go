@@ -89,9 +89,7 @@ func (mdb *mongoDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
 }
 
 func (mdb *mongoDatabase) BreakCache(id string) (found bool) {
-	if _, f := mdb.cache.Get(id); f {
-		found = true
-	}
+	_, found = mdb.cache.Get(id)
 	mdb.cache.Delete(id)
 	return
 }

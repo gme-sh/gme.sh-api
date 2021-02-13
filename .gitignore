@@ -1,4 +1,9 @@
+# Config file
+#  -> contains sensitive information!
 /config.toml
+
+# Built binary
+/gme-shortener
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,intellij+all
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,intellij+all

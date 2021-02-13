@@ -2,6 +2,7 @@ package config
 
 type Config struct {
 	Mongo *MongoConfig
+	Redis *RedisConfig
 }
 
 type MongoConfig struct {

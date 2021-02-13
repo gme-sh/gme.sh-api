@@ -1,2 +1,6 @@
 [Mongo]
     ApplyURI = ""
+[Redis]
+    Addr = ""
+    Password = ""
+    DB = 0

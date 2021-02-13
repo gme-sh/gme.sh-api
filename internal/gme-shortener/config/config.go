@@ -7,3 +7,9 @@ type Config struct {
 type MongoConfig struct {
 	ApplyURI string `json:"apply_uri"`
 }
+
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
+}

@@ -36,7 +36,12 @@ services:
     ports:
       - 1333:1336
     environment:
-      MONGODB_STRING: "mongodb://mongo:27017"
+      # MongoDB
+      MONGODB_APPLYURI: "mongodb://mongo:27017"
+      # Redis
+      REDIS_USE: "true"
+      REDIS_ADDR: "redis"
+      REDIS_DB: "0"
 
 volumes:
   gmeshort-mongo-data:

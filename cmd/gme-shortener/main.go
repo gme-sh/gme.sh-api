@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db/heartbeat"
 	"github.com/go-redis/redis/v8"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -36,10 +38,50 @@ func main() {
 	fmt.Println(Banner)
 	fmt.Println("Starting GMEshort", Version, "🚀")
 
-	// load config
+	/// Config
 	log.Println("└ Loading config")
-
 	var cfg *config.Config
+
+	// check if config file exists
+	if _, err := os.Stat("config.toml"); os.IsNotExist(err) {
+		// create default config
+		var buf bytes.Buffer
+		e := toml.NewEncoder(&buf)
+		err := e.Encode(config.Config{
+			Database: &config.DatabaseConfig{
+				Backend: "mongo",
+				Mongo: &config.MongoConfig{
+					ApplyURI: "mongodb://localhost:27017",
+				},
+				Redis: &config.RedisConfig{
+					Use:      true,
+					Addr:     "localhost",
+					Password: "",
+					DB:       0,
+				},
+				BBolt: &config.BBoltConfig{
+					Path: "dbgoesbrr.rr",
+				},
+				Maria: &config.MariaConfig{
+					Addr:        "localhost",
+					User:        "root",
+					Password:    "",
+					DBName:      "stonks",
+					TablePrefix: "stonks_",
+				},
+			},
+		})
+		if err != nil {
+			log.Fatalln("Error encoding default config:", err)
+			return
+		}
+
+		if err := ioutil.WriteFile("config.toml", buf.Bytes(), 0666); err != nil {
+			log.Fatalln("Error saving default config:", err)
+			return
+		}
+	}
+
 	if _, err := toml.DecodeFile("config.toml", &cfg); err != nil {
 		log.Fatalln("Error decoding file:", err)
 		return
@@ -53,12 +95,7 @@ func main() {
 	}
 
 	config.FromEnv(dbcfg)
-
-	// Update config from environment
-	// Get mongo from environment
-	if mdbs := os.Getenv("MONGODB_STRING"); mdbs != "" {
-		dbcfg.Mongo.ApplyURI = mdbs
-	}
+	///
 
 	// Load persistentDB
 	var persistentDB db.PersistentDatabase

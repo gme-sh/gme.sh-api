@@ -88,7 +88,7 @@ func (mdb *mongoDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
 	_, err = mdb.shortsCollection().UpdateOne(mdb.context, filter, update, opts)
 
 	// save to cache
-	mdb.cache.Set(short.ID, short, cache.DefaultExpiration)
+	mdb.cache.Set(short.ID, &short, cache.DefaultExpiration)
 
 	return nil
 }
@@ -101,4 +101,8 @@ func (mdb *mongoDatabase) BreakCache(id string) (found bool) {
 	_, found = mdb.cache.Get(id)
 	mdb.cache.Delete(id)
 	return
+}
+
+func (mdb *mongoDatabase) ShortURLAvailable(id string) bool {
+	return shortURLAvailable(mdb, id)
 }

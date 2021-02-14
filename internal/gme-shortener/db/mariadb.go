@@ -55,6 +55,10 @@ func (sql *mariaDB) BreakCache(id string) (found bool) {
 	return
 }
 
+func (sql *mariaDB) ShortURLAvailable(id string) bool {
+	return shortURLAvailable(sql, id)
+}
+
 func (sql *mariaDB) SaveShortenedURLWithExpiration(short short.ShortURL, expireAfter time.Duration) (err error) {
 	return errors.New("Not implemented")
 }

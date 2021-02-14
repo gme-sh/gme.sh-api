@@ -82,3 +82,7 @@ func (bbdb *bboltDatabase) BreakCache(id string) (found bool) {
 func (bbdb *bboltDatabase) SaveShortenedURLWithExpiration(short short.ShortURL, expireAfter time.Duration) (err error) {
 	return errors.New("Not implemented")
 }
+
+func (bbdb *bboltDatabase) ShortURLAvailable(id string) bool {
+	return shortURLAvailable(bbdb, id)
+}

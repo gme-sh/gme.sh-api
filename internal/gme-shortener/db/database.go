@@ -11,6 +11,7 @@ import (
 type Database interface {
 	FindShortenedURL(id string) (res *short.ShortURL, err error)
 	SaveShortenedURL(url short.ShortURL) (err error)
+	ShortURLAvailable(id string) bool
 	SaveShortenedURLWithExpiration(url short.ShortURL, expireAfter time.Duration) (err error)
 	BreakCache(id string) (found bool)
 }
@@ -22,4 +23,11 @@ func Must(db Database, err error) Database {
 		return nil
 	}
 	return db
+}
+
+func shortURLAvailable(db Database, id string) bool {
+	if url, err := db.FindShortenedURL(id); url != nil || err == nil {
+		return false
+	}
+	return true
 }

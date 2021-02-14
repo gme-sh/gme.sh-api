@@ -4,20 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db/heartbeat"
+	"github.com/go-redis/redis/v8"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
-
-	"github.com/go-redis/redis/v8"
 
 	"github.com/BurntSushi/toml"
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db"
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/web"
-	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 )
 
 const (
@@ -109,15 +106,6 @@ func main() {
 	} else {
 		hb = make(chan bool, 1)
 	}
-
-	// Create example data
-	log.Println("└ Adding dummy data to persistentDB")
-	link := short.ShortURL{
-		ID:           "ddg",
-		FullURL:      "https://duckduckgo.com/",
-		CreationDate: time.Now(),
-	}
-	log.Println("Saving to persistentDB result:", persistentDB.SaveShortenedURL(link))
 
 	server := web.NewWebServer(persistentDB, redisClient)
 	go server.Start()

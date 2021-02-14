@@ -8,9 +8,8 @@ import (
 
 var availableCharacters = []byte("ABCDEFGHKLMNPRSTUVWXYZabcdefghkmnprstuvwxyz0123455689+-!")
 
-func generateShortID(accept func(id string) bool, try uint64) string {
+func GenerateID(length int, accept func(id string) bool, try uint64) string {
 	rand.Seed(time.Now().UnixNano())
-	length := rand.Intn(10-5) + 5
 
 	var res strings.Builder
 	for i := 0; i < length; i++ {
@@ -26,12 +25,17 @@ func generateShortID(accept func(id string) bool, try uint64) string {
 			return ""
 		}
 
-		return generateShortID(accept, try)
+		return GenerateID(length, accept, try)
 	}
 
 	return resultStr
 }
 
 func GenerateShortID(accept func(id string) bool) string {
-	return generateShortID(accept, 0)
+	length := rand.Intn(10-5) + 5
+	return GenerateID(length, accept, 0)
+}
+
+func AlwaysTrue(s string) bool {
+	return true
 }

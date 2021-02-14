@@ -60,11 +60,11 @@ func (rdb *redisDB) FindShortenedURL(id string) (res *short.ShortURL, err error)
 	return
 }
 
-func (rdb *redisDB) SaveShortenedURL(short short.ShortURL) (err error) {
+func (rdb *redisDB) SaveShortenedURL(short *short.ShortURL) (err error) {
 	return nil
 }
 
-func (rdb *redisDB) SaveShortenedURLWithExpiration(url short.ShortURL, expireAfter time.Duration) (err error) {
+func (rdb *redisDB) SaveShortenedURLWithExpiration(url *short.ShortURL, expireAfter time.Duration) (err error) {
 	var data []byte
 	data, err = json.Marshal(url)
 	if err != nil {

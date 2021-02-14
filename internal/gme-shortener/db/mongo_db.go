@@ -75,7 +75,7 @@ func (mdb *mongoDatabase) FindShortenedURL(id string) (res *short.ShortURL, err 
 	return
 }
 
-func (mdb *mongoDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
+func (mdb *mongoDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 	filter := bson.M{
 		"id": short.ID.String(),
 	}

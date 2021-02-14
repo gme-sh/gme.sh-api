@@ -44,7 +44,7 @@ func (sql *mariaDB) FindShortenedURL(id string) (res *short.ShortURL, err error)
 	return nil, nil
 }
 
-func (sql *mariaDB) SaveShortenedURL(url short.ShortURL) (err error) {
+func (sql *mariaDB) SaveShortenedURL(url *short.ShortURL) (err error) {
 	return nil
 }
 

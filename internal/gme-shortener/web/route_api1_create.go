@@ -109,10 +109,11 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 	///
 
 	// create short id
-	sh := short.ShortURL{
+	sh := &short.ShortURL{
 		ID:           short.ShortID(req.PreferredAlias),
 		FullURL:      req.FullURL,
 		CreationDate: time.Now(),
+		Secret:       short.GenerateID(32, short.AlwaysTrue, 0),
 	}
 
 	// try to save shorted url
@@ -124,6 +125,6 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 	dieCreate(w, &createShortURLResponse{
 		Success: true,
 		Message: "success",
-		Short:   &sh,
+		Short:   sh,
 	})
 }

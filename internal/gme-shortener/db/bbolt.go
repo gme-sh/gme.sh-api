@@ -52,7 +52,7 @@ func (bbdb *bboltDatabase) FindShortenedURL(id string) (res *short.ShortURL, err
 	return
 }
 
-func (bbdb *bboltDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
+func (bbdb *bboltDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 	var ser []byte
 	ser, err = json.Marshal(short)
 

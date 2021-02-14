@@ -15,7 +15,7 @@ type Database interface {
 
 // PersistentDatabase -> PersistentDatabase Interface
 type PersistentDatabase interface /* implements Database */ {
-	SaveShortenedURL(url short.ShortURL) (err error)
+	SaveShortenedURL(url *short.ShortURL) (err error)
 
 	FindShortenedURL(id string) (res *short.ShortURL, err error)
 	BreakCache(id string) (found bool)
@@ -23,7 +23,7 @@ type PersistentDatabase interface /* implements Database */ {
 }
 
 type TemporaryDatabase interface /* implements Database */ {
-	SaveShortenedURLWithExpiration(url short.ShortURL, expireAfter time.Duration) (err error)
+	SaveShortenedURLWithExpiration(url *short.ShortURL, expireAfter time.Duration) (err error)
 	Heartbeat() (err error)
 
 	FindShortenedURL(id string) (res *short.ShortURL, err error)

@@ -1,5 +1,6 @@
 package config
 
+// DatabaseConfig -> Config for Database implementations
 type DatabaseConfig struct {
 	Backend string
 	Mongo   *MongoConfig

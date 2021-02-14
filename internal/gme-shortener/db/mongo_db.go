@@ -51,6 +51,12 @@ func (mdb *mongoDatabase) shortsCollection() *mongo.Collection {
 }
 
 func (mdb *mongoDatabase) FindShortenedURL(id string) (res *short.ShortURL, err error) {
+
+	// Check if id is in the cache
+	if o, found := mdb.cache.Get(id); found {
+		return o.(*short.ShortURL), nil
+	}
+
 	// find in cache
 	if s, found := mdb.cache.Get(id); found {
 		return s.(*short.ShortURL), nil
@@ -99,5 +105,8 @@ func (mdb *mongoDatabase) BreakCache(id string) (found bool) {
 }
 
 func (mdb *mongoDatabase) ShortURLAvailable(id string) bool {
+	if _, found := mdb.cache.Get(id); found {
+		return false
+	}
 	return shortURLAvailable(mdb, id)
 }

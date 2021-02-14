@@ -24,8 +24,24 @@ type RedisConfig struct {
 	Password string
 	DB       int
 }
+<<<<<<< HEAD
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> main
 
 // BBoltConfig -> Config for BBolt implementation
 type BBoltConfig struct {
 	Path string
 }
+<<<<<<< HEAD
+=======
+
+// MariaConfig -> Config for Maria Imlementation
+type MariaConfig struct {
+	user     string
+	password string
+	dbname   string
+}
+>>>>>>> Stashed changes
+>>>>>>> main

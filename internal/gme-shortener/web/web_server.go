@@ -17,9 +17,9 @@ func (ws *WebServer) Start() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/{id}", ws.handleRedirect)
-	router.HandleFunc("/404/{b64id}", ws.handleShortURLNotFound)
+	//router.HandleFunc("/404/{b64id}", ws.handleShortURLNotFound)
 	router.HandleFunc("/api/create", ws.handleShortCreate)
-	router.HandleFunc("/", ws.handleIndex)
+	//router.HandleFunc("/", ws.handleIndex)
 
 	if err := http.ListenAndServe(":1336", router); err != nil {
 		log.Fatalln("Error listening and serving:", err)

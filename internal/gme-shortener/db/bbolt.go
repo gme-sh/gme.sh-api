@@ -17,6 +17,18 @@ func NewBBoltDatabase(path string) (Database, error) {
 		return nil, err
 	}
 
+	err = db.Update(func(tx *bbolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte("ShortenedUrls"))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &bboltDatabase{db, cache.New(10*time.Minute, 15*time.Minute)}, nil
 }
 

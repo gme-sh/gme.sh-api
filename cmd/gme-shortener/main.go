@@ -50,6 +50,8 @@ func main() {
 		log.Println("config:", string(s))
 	}
 
+	config.FromEnv(dbcfg)
+
 	// Update config from environment
 	// Get mongo from environment
 	if mdbs := os.Getenv("MONGODB_STRING"); mdbs != "" {

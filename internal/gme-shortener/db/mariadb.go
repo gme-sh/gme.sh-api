@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"time"
@@ -52,4 +53,8 @@ func (sql *mariaDB) BreakCache(id string) (found bool) {
 	_, found = sql.cache.Get(id)
 	sql.cache.Delete(id)
 	return
+}
+
+func (sql *mariaDB) SaveShortenedURLWithExpiration(short short.ShortURL, expireAfter time.Duration) (err error) {
+	return errors.New("Not implemented")
 }

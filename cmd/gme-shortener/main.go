@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 
 	"github.com/BurntSushi/toml"
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
@@ -73,6 +74,10 @@ func main() {
 	case "bbolt":
 		log.Println("👉 Using BBolt as backend")
 		database = db.Must(db.NewBBoltDatabase(dbcfg.BBolt.Path))
+		break
+	case "redis":
+		log.Println("👉 Using Redis as backend")
+		database = db.Must(db.NewRedisDatabase(*dbcfg.Redis))
 		break
 	default:
 		log.Fatalln("🚨 Invalid database backend: '", dbcfg.Backend, "'")

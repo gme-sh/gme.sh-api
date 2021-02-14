@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
@@ -90,6 +91,10 @@ func (mdb *mongoDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
 	mdb.cache.Set(short.ID, short, cache.DefaultExpiration)
 
 	return nil
+}
+
+func (mdb *mongoDatabase) SaveShortenedURLWithExpiration(short short.ShortURL, expireAfter time.Duration) (err error) {
+	return errors.New("Not implemented")
 }
 
 func (mdb *mongoDatabase) BreakCache(id string) (found bool) {

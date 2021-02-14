@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 )
 
@@ -67,8 +68,11 @@ func (ws *WebServer) handleApiV1Stats(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	alias := short.ShortID(vars["id"])
 
+	log.Println("🚀", r.RemoteAddr, "requested to GET stats for", alias)
+
 	// find shorted url
 	if available := ws.PersistentDatabase.ShortURLAvailable(alias); available {
+		log.Println("    🤬 But", alias, "was not found")
 		dieStats(w, "url not found")
 		return
 	}
@@ -79,7 +83,8 @@ func (ws *WebServer) handleApiV1Stats(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 		Message: "success",
 		Stats: &short.Stats{
-			Calls: 133742069,
+			Calls:   133742069,
+			Calls60: 24,
 		},
 	}
 

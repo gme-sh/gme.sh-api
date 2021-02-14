@@ -85,6 +85,23 @@ func (bbdb *bboltDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 	return
 }
 
+func (bbdb *bboltDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
+	err = bbdb.database.Update(func(tx *bbolt.Tx) (err error) {
+		var bucket *bbolt.Bucket
+		if bucket, err = tx.CreateBucketIfNotExists([]byte(BBoltBucketName)); err != nil {
+			return
+		}
+		err = bucket.Delete(id.Bytes())
+		return
+	})
+
+	if err == nil {
+		bbdb.cache.Delete(id.String())
+	}
+
+	return
+}
+
 func (bbdb *bboltDatabase) BreakCache(id short.ShortID) (found bool) {
 	_, found = bbdb.cache.Get(id.String())
 	bbdb.cache.Delete(id.String())

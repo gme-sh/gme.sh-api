@@ -16,6 +16,7 @@ type Database interface {
 // PersistentDatabase -> PersistentDatabase Interface
 type PersistentDatabase interface /* implements Database */ {
 	SaveShortenedURL(url *short.ShortURL) (err error)
+	DeleteShortenedURL(id *short.ShortID) (err error)
 
 	FindShortenedURL(id short.ShortID) (res *short.ShortURL, err error)
 	BreakCache(id short.ShortID) (found bool)

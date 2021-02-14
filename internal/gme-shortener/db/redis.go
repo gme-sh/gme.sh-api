@@ -68,6 +68,11 @@ func (rdb *redisDB) SaveShortenedURL(short *short.ShortURL) (err error) {
 	return
 }
 
+func (rdb *redisDB) DeleteShortenedURL(id *short.ShortID) (err error) {
+	err = rdb.client.Del(rdb.context, id.RedisKey()).Err()
+	return
+}
+
 func (rdb *redisDB) SaveShortenedURLWithExpiration(url *short.ShortURL, expireAfter time.Duration) (err error) {
 	var data []byte
 	data, err = json.Marshal(url)

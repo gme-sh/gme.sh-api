@@ -18,3 +18,6 @@ func (id *ShortID) RedisKey() string {
 func (id *ShortID) String() string {
 	return string(*id)
 }
+func (id *ShortID) Bytes() []byte {
+	return []byte(id.String())
+}

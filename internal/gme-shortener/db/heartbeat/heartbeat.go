@@ -16,10 +16,16 @@ func createTickerAndCheck(tdb db.TemporaryDatabase, c chan bool) {
 		select {
 		case <-ticker.C:
 			err := tdb.Heartbeat()
-			if err != nil {
-				log.Println("💔 Heartbeat failed:", err)
-			} else {
-				log.Println("💚 Heartbeat successful.")
+
+			// only send error if new
+			if err != LastHeartbeatError {
+				if err == nil || LastHeartbeatError == nil || err.Error() != LastHeartbeatError.Error() {
+					if err != nil {
+						log.Println("💔 Heartbeat failed:", err)
+					} else {
+						log.Println("💚 Heartbeat successful.")
+					}
+				}
 			}
 
 			mu.Lock()

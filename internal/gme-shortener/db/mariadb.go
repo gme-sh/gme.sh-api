@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"time"
@@ -22,12 +23,13 @@ func NewMariaDB(config config.MariaConfig) (PersistentDatabase, error) {
 	}
 
 	query, err := ioutil.ReadFile("./setup/setup_mariadb.sql")
-
 	if err != nil {
 		return nil, err
 	}
 
-	database.Query(string(query))
+	if _, err := database.Query(string(query)); err != nil {
+		return nil, err
+	}
 
 	return &mariaDB{
 		db:    database,
@@ -41,11 +43,15 @@ type mariaDB struct {
 }
 
 func (sql *mariaDB) FindShortenedURL(id short.ShortID) (res *short.ShortURL, err error) {
-	return nil, nil
+	return nil, errors.New("not implemented")
 }
 
 func (sql *mariaDB) SaveShortenedURL(url *short.ShortURL) (err error) {
-	return nil
+	return errors.New("not implemented")
+}
+
+func (sql *mariaDB) DeleteShortenedURL(id *short.ShortID) (err error) {
+	return errors.New("not implemented")
 }
 
 func (sql *mariaDB) BreakCache(id short.ShortID) (found bool) {

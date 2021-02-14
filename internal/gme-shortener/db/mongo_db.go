@@ -92,6 +92,21 @@ func (mdb *mongoDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 	return nil
 }
 
+func (mdb *mongoDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
+	filter := bson.M{
+		"id": id.String(),
+	}
+
+	_, err = mdb.shortsCollection().DeleteOne(mdb.context, filter)
+
+	if err == nil {
+		// remove from cache
+		mdb.cache.Delete(id.String())
+	}
+
+	return
+}
+
 func (mdb *mongoDatabase) BreakCache(id short.ShortID) (found bool) {
 	_, found = mdb.cache.Get(id.String())
 	mdb.cache.Delete(id.String())

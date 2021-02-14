@@ -20,10 +20,10 @@ go build -o ./bin/gme-darwin-amd64 ./cmd/gme-shortener/main.go
 Write-Host "🪟 Compile for Windows"
 Set-Variable GOOS=windows 
 Set-Variable GOARCH=amd64 
-go build -o ./bin/gme-windows-amd64 ./cmd/gme-shortener/main.go
+go build -o ./bin/gme-windows-amd64.exe ./cmd/gme-shortener/main.go
 Set-Variable GOOS=windows 
 Set-Variable GOARCH=386 
-go build -o ./bin/gme-windows-386 ./cmd/gme-shortener/main.go
+go build -o ./bin/gme-windows-386.exe ./cmd/gme-shortener/main.go
 Write-Host "🐡 Compile for FreeBSD"
 Set-Variable GOOS=freebsd 
 Set-Variable GOARCH=amd64 

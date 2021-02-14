@@ -40,7 +40,7 @@ services:
       MONGODB_APPLYURI: "mongodb://mongo:27017"
       # Redis
       REDIS_USE: "true"
-      REDIS_ADDR: "redis"
+      REDIS_ADDR: "redis:6379"
       REDIS_DB: "0"
 
 volumes:

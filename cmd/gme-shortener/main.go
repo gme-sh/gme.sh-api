@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db/heartbeat"
-	"github.com/go-redis/redis/v8"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db/heartbeat"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/BurntSushi/toml"
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"

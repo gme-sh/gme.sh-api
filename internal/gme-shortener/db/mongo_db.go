@@ -87,7 +87,7 @@ func (mdb *mongoDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 	_, err = mdb.shortsCollection().UpdateOne(mdb.context, filter, update, opts)
 
 	// save to cache
-	mdb.cache.Set(short.ID.String(), &short, cache.DefaultExpiration)
+	mdb.cache.Set(short.ID.String(), short, cache.DefaultExpiration)
 
 	return nil
 }

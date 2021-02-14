@@ -11,15 +11,15 @@ import (
 )
 
 type createShortURLPayload struct {
-	FullURL            string
-	PreferredAlias     string
-	ExpireAfterSeconds int
+	FullURL            string `json:"full_url"`
+	PreferredAlias     string `json:"preferred_alias"`
+	ExpireAfterSeconds int    `json:"expire_after_seconds"`
 }
 
 type createShortURLResponse struct {
-	Success bool
-	Message string
-	Short   *short.ShortURL
+	Success bool            `json:"success"`
+	Message string          `json:"message"`
+	Short   *short.ShortURL `json:"short"`
 }
 
 func dieCreate(w http.ResponseWriter, o interface{}) {

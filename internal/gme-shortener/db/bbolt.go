@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
@@ -76,6 +77,10 @@ func (bbdb *bboltDatabase) BreakCache(id string) (found bool) {
 	_, found = bbdb.cache.Get(id)
 	bbdb.cache.Delete(id)
 	return
+}
+
+func (bbdb *bboltDatabase) SaveShortenedURLWithExpiration(short short.ShortURL, expireAfter time.Duration) (err error) {
+	return errors.New("Not implemented")
 }
 
 func (bbdb *bboltDatabase) ShortURLAvailable(id string) bool {

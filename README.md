@@ -1,5 +1,5 @@
-Go: ![Build Go](https://github.com/full-stack-gods/GMEshortener/workflows/Build%20Go/badge.svg) | 
-Docker: ![Build Docker](https://github.com/full-stack-gods/GMEshortener/workflows/Build%20Docker/badge.svg)
+![Build Go](https://github.com/full-stack-gods/GMEshortener/workflows/Build%20Go/badge.svg)
+![Build Docker](https://github.com/full-stack-gods/GMEshortener/workflows/Build%20Docker/badge.svg)
 
 # GMEshortener
 $GME go brrrrr

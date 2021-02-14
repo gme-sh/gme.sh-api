@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -22,84 +20,63 @@ import (
 
 const (
 	Banner = `
- ██████╗ ███╗   ███╗███████╗███████╗██╗  ██╗ ██████╗ ██████╗ ████████╗
-██╔════╝ ████╗ ████║██╔════╝██╔════╝██║  ██║██╔═══██╗██╔══██╗╚══██╔══╝
-██║  ███╗██╔████╔██║█████╗  ███████╗███████║██║   ██║██████╔╝   ██║   
-██║   ██║██║╚██╔╝██║██╔══╝  ╚════██║██╔══██║██║   ██║██╔══██╗   ██║   
-╚██████╔╝██║ ╚═╝ ██║███████╗███████║██║  ██║╚██████╔╝██║  ██║   ██║   
- ╚═════╝ ╚═╝     ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝`
+                                         /$$                               /$$
+                                        | $$                              | $$
+ ██████╗ ███╗   ███╗███████╗   /$$$$$$$ | $$$$$$$    /$$$$$$   /$$$$$$   /$$$$$$
+██╔════╝ ████╗ ████║██╔════╝  /$$_____/ | $$__  $$  /$$__  $$ /$$__  $$ |_  $$_/
+██║  ███╗██╔████╔██║█████╗   |  $$$$$$  | $$  \ $$ | $$  \ $$ | $$  \__/   | $$
+██║   ██║██║╚██╔╝██║██╔══╝    \____  $$ | $$  | $$ | $$  | $$ | $$         | $$ /$$
+╚██████╔╝██║ ╚═╝ ██║███████╗  /$$$$$$$/ | $$  | $$ |  $$$$$$/ | $$         |  $$$$/
+ ╚═════╝ ╚═╝     ╚═╝╚══════╝ |_______/  |__/  |__/  \______/  |__/          \____/`
 	Version = "1.0.0-alpha" // semantic
 )
 
-func Test(database db.Database) {
-	log.Println("test:", database)
+var (
+	// ConfigPath is "config.toml" by default
+	ConfigPath = "config.toml"
+)
+
+func init() {
+	if val := os.Getenv("CONFIG_PATH"); val != "" {
+		ConfigPath = val
+	}
 }
 
 func main() {
 	fmt.Println(Banner)
-	fmt.Println("Starting GMEshort", Version, "🚀")
+	fmt.Println("Starting $GMEshort", Version, "🚀")
+	fmt.Println()
 
-	/// Config
+	//// Config
 	log.Println("└ Loading config")
 	var cfg *config.Config
-
 	// check if config file exists
-	if _, err := os.Stat("config.toml"); os.IsNotExist(err) {
-		// create default config
-		var buf bytes.Buffer
-		e := toml.NewEncoder(&buf)
-		err := e.Encode(config.Config{
-			Database: &config.DatabaseConfig{
-				Backend: "mongo",
-				Mongo: &config.MongoConfig{
-					ApplyURI: "mongodb://localhost:27017",
-				},
-				Redis: &config.RedisConfig{
-					Use:      true,
-					Addr:     "localhost",
-					Password: "",
-					DB:       0,
-				},
-				BBolt: &config.BBoltConfig{
-					Path: "dbgoesbrr.rr",
-				},
-				Maria: &config.MariaConfig{
-					Addr:        "localhost",
-					User:        "root",
-					Password:    "",
-					DBName:      "stonks",
-					TablePrefix: "stonks_",
-				},
-			},
-		})
-		if err != nil {
-			log.Fatalln("Error encoding default config:", err)
-			return
-		}
-
-		if err := ioutil.WriteFile("config.toml", buf.Bytes(), 0666); err != nil {
-			log.Fatalln("Error saving default config:", err)
+	// if not, create a default config
+	if _, err := os.Stat(ConfigPath); os.IsNotExist(err) {
+		log.Println("└   Creating default config")
+		if err := config.CreateDefault(); err != nil {
+			log.Fatalln("Error creating config:", err)
 			return
 		}
 	}
-
-	if _, err := toml.DecodeFile("config.toml", &cfg); err != nil {
+	// decode config from file "config.toml"
+	if _, err := toml.DecodeFile(ConfigPath, &cfg); err != nil {
 		log.Fatalln("Error decoding file:", err)
 		return
 	}
-
 	dbcfg := cfg.Database
 	if s, err := json.Marshal(dbcfg); err != nil {
 		log.Println("ERROR marshalling config:", err)
 	} else {
 		log.Println("config:", string(s))
 	}
-
 	config.FromEnv(dbcfg)
-	///
+	////
 
-	// Load persistentDB
+	//// Database
+	// persistentDB is used to store short urls (persistent, obviously)
 	var persistentDB db.PersistentDatabase
+	// tempDB is used to store temporary information for short urls (eg. stats, caching)
 	var tempDB db.TemporaryDatabase
 
 	switch strings.ToLower(dbcfg.Backend) {
@@ -144,9 +121,12 @@ func main() {
 	} else {
 		hb = make(chan bool, 1)
 	}
+	////
 
+	//// Web-Server
 	server := web.NewWebServer(persistentDB, tempDB, redisClient)
 	go server.Start()
+	////
 
 	log.Println("WebServer is (hopefully) up and running")
 	log.Println("Press CTRL+C to exit gracefully")

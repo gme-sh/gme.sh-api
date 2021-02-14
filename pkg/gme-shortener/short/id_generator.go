@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var availableCharacters = []byte("ABCDEFGHKLMNPRSTUVWXYZabcdefghkmnprstuvwxyz0123455689+-!")
+var availableCharacters = []byte("ABCDEFGHKLMNPRSTUVWXYZabcdefghkmnprstuvwxyz0123455689")
 
 func GenerateID(length int, accept func(id ShortID) bool, try uint64) ShortID {
 	rand.Seed(time.Now().UnixNano())

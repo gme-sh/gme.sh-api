@@ -10,6 +10,7 @@ import (
 
 type WebServer struct {
 	db.PersistentDatabase
+	db.TemporaryDatabase
 	redis *redis.Client
 }
 
@@ -27,9 +28,10 @@ func (ws *WebServer) Start() {
 	}
 }
 
-func NewWebServer(db db.PersistentDatabase, red *redis.Client) *WebServer {
+func NewWebServer(persistent db.PersistentDatabase, temporary db.TemporaryDatabase, red *redis.Client) *WebServer {
 	return &WebServer{
-		db,
+		persistent,
+		temporary,
 		red,
 	}
 }

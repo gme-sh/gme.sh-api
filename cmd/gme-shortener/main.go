@@ -145,7 +145,7 @@ func main() {
 		hb = make(chan bool, 1)
 	}
 
-	server := web.NewWebServer(persistentDB, redisClient)
+	server := web.NewWebServer(persistentDB, tempDB, redisClient)
 	go server.Start()
 
 	log.Println("WebServer is (hopefully) up and running")

@@ -45,6 +45,12 @@ func NewRedisDatabase(cfg config.RedisConfig) (Database, error) {
 	}, nil
 }
 
+/*
+ * ==================================================================================================
+ *                            P E R M A N E N T  D A T A B A S E
+ * ==================================================================================================
+ */
+
 func (rdb *redisDB) FindShortenedURL(id short.ShortID) (res *short.ShortURL, err error) {
 	var data *redis.StringCmd
 	data = rdb.client.Get(rdb.context, id.RedisKey())
@@ -92,11 +98,68 @@ func (rdb *redisDB) ShortURLAvailable(id short.ShortID) bool {
 	return shortURLAvailable(rdb, id)
 }
 
+/*
+ * ==================================================================================================
+ *                            T E M P O R A R Y  D A T A B A S E
+ * ==================================================================================================
+ */
+
 func (rdb *redisDB) Heartbeat() (err error) {
 	err = rdb.client.Set(rdb.context, "heartbeat", 1, 1*time.Second).Err()
 	return
 }
 
-func (rdb *redisDB) FindStats(id short.ShortID) *short.Stats {
-	return nil
+func (rdb *redisDB) FindStats(id short.ShortID) (stats *short.Stats, err error) {
+	var calls, calls60 uint64
+
+	calls, err = rdb.client.Get(rdb.context, id.RedisKey()+"::count:g").Uint64()
+	if err != nil {
+		return
+	}
+
+	calls60, err = rdb.client.Get(rdb.context, id.RedisKey()+"::count:60").Uint64()
+	if err != nil {
+		return
+	}
+
+	stats = &short.Stats{
+		Calls:   calls,
+		Calls60: calls60,
+	}
+
+	return
+}
+
+func (rdb *redisDB) AddStats(id short.ShortID) (err error) {
+	err = rdb.client.Incr(rdb.context, id.RedisKey()+"::count:g").Err()
+	if err != nil {
+		return
+	}
+
+	ex := rdb.client.Exists(rdb.context, id.RedisKey()+"::count:60")
+	err = ex.Err()
+	expire := ex.Val() == 0
+	if err != nil {
+		return
+	}
+
+	err = rdb.client.Incr(rdb.context, id.RedisKey()+"::count:60").Err()
+	if err != nil {
+		return
+	}
+
+	if !expire {
+		err = rdb.client.Expire(rdb.context, id.RedisKey()+"::count:60", time.Hour).Err()
+	}
+
+	return
+}
+
+func (rdb *redisDB) DeleteStats(id short.ShortID) (err error) {
+	err = rdb.client.Del(
+		rdb.context,
+		id.RedisKey()+"::count:g",
+		id.RedisKey()+"::count:60",
+	).Err()
+	return
 }

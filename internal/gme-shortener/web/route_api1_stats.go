@@ -77,16 +77,18 @@ func (ws *WebServer) handleApiV1Stats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get stats
-	// TODO: Get stats
-	res := &getStatsResponse{
-		Success: true,
-		Message: "success",
-		Stats: &short.Stats{
-			Calls:   133742069,
-			Calls60: 24,
-		},
+	stats, err := ws.TemporaryDatabase.FindStats(alias)
+	if err != nil {
+		log.Println("    🤬 But stats for", alias, "not found")
+		dieStats(w, err)
+		return
 	}
 
-	dieStats(w, res)
+	log.Println("    ✅ Stats:", stats)
+
+	dieStats(w, &getStatsResponse{
+		Success: true,
+		Message: "Success",
+		Stats:   stats,
+	})
 }

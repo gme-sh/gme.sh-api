@@ -3,8 +3,10 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
+	"io/ioutil"
 	"time"
+
+	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
 
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 	_ "github.com/go-sql-driver/mysql" // mysql database driver
@@ -19,8 +21,13 @@ func NewMariaDB(config config.MariaConfig) (Database, error) {
 		return nil, err
 	}
 
-	// TODO: Create Table either in go or manually
-	database.Query("CREATE TABLE ShortenedUrls")
+	query, err := ioutil.ReadFile("./setup/setup_mariadb.sql")
+
+	if err != nil {
+		return nil, err
+	}
+
+	database.Query(string(query))
 
 	return &mariaDB{
 		db:    database,

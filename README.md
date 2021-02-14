@@ -1,3 +1,4 @@
+[![forthebadge](https://forthebadge.com/images/badges/made-with-go.svg)](https://forthebadge.com)  
 ![Build Go](https://github.com/full-stack-gods/GMEshortener/workflows/Build%20Go/badge.svg)
 ![Build Docker](https://github.com/full-stack-gods/GMEshortener/workflows/Build%20Docker/badge.svg)
 

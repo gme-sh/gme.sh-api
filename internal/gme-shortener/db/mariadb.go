@@ -53,3 +53,7 @@ func (sql *mariaDB) BreakCache(id string) (found bool) {
 	sql.cache.Delete(id)
 	return
 }
+
+func (sql *mariaDB) ShortURLAvailable(id string) bool {
+	return shortURLAvailable(sql, id)
+}

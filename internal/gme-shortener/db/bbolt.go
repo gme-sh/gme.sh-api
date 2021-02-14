@@ -77,3 +77,7 @@ func (bbdb *bboltDatabase) BreakCache(id string) (found bool) {
 	bbdb.cache.Delete(id)
 	return
 }
+
+func (bbdb *bboltDatabase) ShortURLAvailable(id string) bool {
+	return shortURLAvailable(bbdb, id)
+}

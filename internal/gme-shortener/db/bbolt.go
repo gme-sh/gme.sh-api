@@ -2,7 +2,6 @@ package db
 
 import (
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
@@ -15,7 +14,7 @@ const (
 )
 
 // NewBBoltDatabase -> Create new BBoltDatabase
-func NewBBoltDatabase(path string) (bbdb Database, err error) {
+func NewBBoltDatabase(path string) (bbdb PersistentDatabase, err error) {
 	db, err := bbolt.Open(path, 0666, nil)
 
 	if err != nil {
@@ -66,7 +65,7 @@ func (bbdb *bboltDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
 		if bucket, err = tx.CreateBucketIfNotExists([]byte(BBoltBucketName)); err != nil {
 			return
 		}
-		err = bucket.Put([]byte(short.ID), ser)
+		err = bucket.Put([]byte(short.ID.String()), ser)
 		return
 	})
 
@@ -77,10 +76,6 @@ func (bbdb *bboltDatabase) BreakCache(id string) (found bool) {
 	_, found = bbdb.cache.Get(id)
 	bbdb.cache.Delete(id)
 	return
-}
-
-func (bbdb *bboltDatabase) SaveShortenedURLWithExpiration(short short.ShortURL, expireAfter time.Duration) (err error) {
-	return errors.New("Not implemented")
 }
 
 func (bbdb *bboltDatabase) ShortURLAvailable(id string) bool {

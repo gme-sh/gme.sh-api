@@ -68,7 +68,7 @@ func (ws *WebServer) handleApiV1Stats(w http.ResponseWriter, r *http.Request) {
 	alias := vars["id"]
 
 	// find shorted url
-	if available := ws.Database.ShortURLAvailable(alias); available {
+	if available := ws.PersistentDatabase.ShortURLAvailable(alias); available {
 		dieStats(w, "url not found")
 		return
 	}

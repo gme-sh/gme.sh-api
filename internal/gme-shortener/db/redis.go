@@ -22,8 +22,9 @@ func NewRedisClient(cfg config.RedisConfig) *redis.Client {
 }
 
 type redisDB struct {
-	*redis.Client
-	*cache.Cache
+	client  *redis.Client
+	cache   *cache.Cache
+	context context.Context
 }
 
 // NewRedisDatabase -> Use Redis as backend
@@ -34,24 +35,28 @@ func NewRedisDatabase(cfg config.RedisConfig) (Database, error) {
 		DB:       cfg.DB,
 	})
 
-	if res := client.Set(context.TODO(), "heartbeat", 1, 0); res.Err() != nil {
+	ctx := context.TODO()
+	if res := client.Set(ctx, "heartbeat", 1, 0); res.Err() != nil {
 		log.Fatalln("Error connecting to Redis:", res.Err())
 		return nil, res.Err()
 	}
 
 	return &redisDB{
-		Client: client,
-		Cache:  cache.New(15*time.Minute, 10*time.Minute),
+		client:  client,
+		cache:   cache.New(15*time.Minute, 10*time.Minute),
+		context: ctx,
 	}, nil
 }
 
 func (rdb *redisDB) FindShortenedURL(id string) (res *short.ShortURL, err error) {
 	var data *redis.StringCmd
-	data = rdb.Client.Get(context.TODO(), "short::"+id)
-	if data.Err() != nil {
-		return nil, data.Err()
+	data = rdb.client.Get(rdb.context, "short::"+id)
+	err = data.Err()
+	if err != nil {
+		return nil, err
 	}
-	json.Unmarshal([]byte(data.Val()), &res)
+
+	err = json.Unmarshal([]byte(data.Val()), &res)
 	return
 }
 
@@ -65,12 +70,22 @@ func (rdb *redisDB) SaveShortenedURLWithExpiration(url short.ShortURL, expireAft
 	if err != nil {
 		return
 	}
-	rdb.Client.Set(context.TODO(), "short::"+url.ID, string(data), expireAfter)
+
+	err = rdb.client.Set(rdb.context, url.ID.RedisKey(), string(data), expireAfter).Err()
 	return
 }
 
 func (rdb *redisDB) BreakCache(id string) (found bool) {
-	_, found = rdb.Cache.Get(id)
-	rdb.Cache.Delete(id)
+	_, found = rdb.cache.Get(id)
+	rdb.cache.Delete(id)
+	return
+}
+
+func (rdb *redisDB) ShortURLAvailable(id string) bool {
+	return shortURLAvailable(rdb, id)
+}
+
+func (rdb *redisDB) Heartbeat() (err error) {
+	err = rdb.client.Set(rdb.context, "heartbeat", 1, 1*time.Second).Err()
 	return
 }

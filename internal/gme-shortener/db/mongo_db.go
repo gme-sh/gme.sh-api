@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
@@ -13,14 +12,14 @@ import (
 )
 
 const (
-	// DatabaseName -> Name of the Database
+	// DatabaseName -> Name of the PersistentDatabase
 	DatabaseName = "gme-shorts"
 	// ShortenedCollectionName -> Name of the collection
 	ShortenedCollectionName = "stonks"
 )
 
 // NewMongoDatabase -> Create a new MongoDB
-func NewMongoDatabase(connectionString string) (db Database, err error) {
+func NewMongoDatabase(connectionString string) (db PersistentDatabase, err error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(connectionString))
 	if err != nil {
 		return nil, err
@@ -39,7 +38,7 @@ func NewMongoDatabase(connectionString string) (db Database, err error) {
 	}, nil
 }
 
-// implements Database
+// implements PersistentDatabase
 type mongoDatabase struct {
 	client   *mongo.Client
 	context  context.Context
@@ -78,7 +77,7 @@ func (mdb *mongoDatabase) FindShortenedURL(id string) (res *short.ShortURL, err 
 
 func (mdb *mongoDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
 	filter := bson.M{
-		"id": short.ID,
+		"id": short.ID.String(),
 	}
 	update := bson.M{
 		"$set": short,
@@ -88,13 +87,9 @@ func (mdb *mongoDatabase) SaveShortenedURL(short short.ShortURL) (err error) {
 	_, err = mdb.shortsCollection().UpdateOne(mdb.context, filter, update, opts)
 
 	// save to cache
-	mdb.cache.Set(short.ID, &short, cache.DefaultExpiration)
+	mdb.cache.Set(short.ID.String(), &short, cache.DefaultExpiration)
 
 	return nil
-}
-
-func (mdb *mongoDatabase) SaveShortenedURLWithExpiration(short short.ShortURL, expireAfter time.Duration) (err error) {
-	return errors.New("Not implemented")
 }
 
 func (mdb *mongoDatabase) BreakCache(id string) (found bool) {

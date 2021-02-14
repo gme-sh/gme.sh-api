@@ -1,9 +1,9 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db/heartbeat"
 	"log"
 	"os"
 	"os/signal"
@@ -30,6 +30,10 @@ const (
  ╚═════╝ ╚═╝     ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝`
 	Version = "1.0.0-alpha" // semantic
 )
+
+func Test(database db.Database) {
+	log.Println("test:", database)
+}
 
 func main() {
 	fmt.Println(Banner)
@@ -59,28 +63,32 @@ func main() {
 		dbcfg.Mongo.ApplyURI = mdbs
 	}
 
-	// Load database
-	var database db.Database
+	// Load persistentDB
+	var persistentDB db.PersistentDatabase
+	var tempDB db.TemporaryDatabase
 
 	switch strings.ToLower(dbcfg.Backend) {
 	case "mongo":
 		log.Println("👉 Using MongoDB as backend")
-		database = db.Must(db.NewMongoDatabase(dbcfg.Mongo.ApplyURI))
+		persistentDB = db.Must(db.NewMongoDatabase(dbcfg.Mongo.ApplyURI)).(db.PersistentDatabase)
 		break
 	case "maria":
 		log.Println("👉 Using MariaDB as backend")
-		database = db.Must(db.NewMariaDB(*dbcfg.Maria))
+		persistentDB = db.Must(db.NewMariaDB(*dbcfg.Maria)).(db.PersistentDatabase)
 		break
 	case "bbolt":
 		log.Println("👉 Using BBolt as backend")
-		database = db.Must(db.NewBBoltDatabase(dbcfg.BBolt.Path))
+		persistentDB = db.Must(db.NewBBoltDatabase(dbcfg.BBolt.Path)).(db.PersistentDatabase)
 		break
 	case "redis":
 		log.Println("👉 Using Redis as backend")
-		database = db.Must(db.NewRedisDatabase(*dbcfg.Redis))
+		redisDB := db.Must(db.NewRedisDatabase(*dbcfg.Redis))
+
+		persistentDB = redisDB.(db.PersistentDatabase)
+		tempDB = redisDB.(db.TemporaryDatabase)
 		break
 	default:
-		log.Fatalln("🚨 Invalid database backend: '", dbcfg.Backend, "'")
+		log.Fatalln("🚨 Invalid persistentDB backend: '", dbcfg.Backend, "'")
 		return
 	}
 
@@ -88,25 +96,30 @@ func main() {
 
 	// Load redis
 	if dbcfg.Redis.Use {
-		log.Println("👉 Using redis")
+		log.Println("👉 Using redis as temporary database")
 
-		redisClient = db.NewRedisClient(*dbcfg.Redis)
-		if res := redisClient.Set(context.TODO(), "heartbeat", 1, 0); res.Err() != nil {
-			log.Fatalln("Error connecting to Redis:", res.Err())
-			return
+		if tempDB == nil {
+			tempDB = db.Must(db.NewRedisDatabase(*dbcfg.Redis)).(db.TemporaryDatabase)
 		}
 	}
 
+	var hb chan bool
+	if tempDB != nil {
+		hb = heartbeat.CreateHeartbeatService(tempDB)
+	} else {
+		hb = make(chan bool, 1)
+	}
+
 	// Create example data
-	log.Println("└ Adding dummy data to database")
+	log.Println("└ Adding dummy data to persistentDB")
 	link := short.ShortURL{
 		ID:           "ddg",
 		FullURL:      "https://duckduckgo.com/",
 		CreationDate: time.Now(),
 	}
-	log.Println("Saving to database result:", database.SaveShortenedURL(link))
+	log.Println("Saving to persistentDB result:", persistentDB.SaveShortenedURL(link))
 
-	server := web.NewWebServer(database, redisClient)
+	server := web.NewWebServer(persistentDB, redisClient)
 	go server.Start()
 
 	log.Println("WebServer is (hopefully) up and running")
@@ -115,6 +128,8 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
+
+	hb <- true
 
 	// after CTRL+c
 	log.Println("Shutting down webserver")

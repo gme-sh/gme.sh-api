@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"time"
@@ -15,7 +14,7 @@ import (
 )
 
 // NewMariaDB -> Create a new MariaDB connection
-func NewMariaDB(config config.MariaConfig) (Database, error) {
+func NewMariaDB(config config.MariaConfig) (PersistentDatabase, error) {
 	conn := fmt.Sprintf("%s:%s@%s", config.User, config.Password, config.DBName)
 	database, err := sql.Open("mysql", conn)
 	if err != nil {
@@ -57,8 +56,4 @@ func (sql *mariaDB) BreakCache(id string) (found bool) {
 
 func (sql *mariaDB) ShortURLAvailable(id string) bool {
 	return shortURLAvailable(sql, id)
-}
-
-func (sql *mariaDB) SaveShortenedURLWithExpiration(short short.ShortURL, expireAfter time.Duration) (err error) {
-	return errors.New("Not implemented")
 }

@@ -93,7 +93,7 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 
 	/// Generate ID and check if alias already exists
 	if req.PreferredAlias == "" {
-		if generated := short.GenerateShortID(ws.Database.ShortURLAvailable); generated != "" {
+		if generated := short.GenerateShortID(ws.PersistentDatabase.ShortURLAvailable); generated != "" {
 			req.PreferredAlias = generated
 		} else {
 			dieCreate(w, "generated id not available")
@@ -102,7 +102,7 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if alias already exists
-	if available := ws.Database.ShortURLAvailable(req.PreferredAlias); !available {
+	if available := ws.PersistentDatabase.ShortURLAvailable(req.PreferredAlias); !available {
 		dieCreate(w, "preferred alias is not available")
 		return
 	}
@@ -110,13 +110,13 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 
 	// create short id
 	sh := short.ShortURL{
-		ID:           req.PreferredAlias,
+		ID:           short.ShortID(req.PreferredAlias),
 		FullURL:      req.FullURL,
 		CreationDate: time.Now(),
 	}
 
 	// try to save shorted url
-	if err := ws.Database.SaveShortenedURL(sh); err != nil {
+	if err := ws.PersistentDatabase.SaveShortenedURL(sh); err != nil {
 		dieCreate(w, err)
 		return
 	}

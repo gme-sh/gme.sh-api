@@ -7,13 +7,28 @@ import (
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 )
 
-// Database -> Database Interface
 type Database interface {
 	FindShortenedURL(id string) (res *short.ShortURL, err error)
-	SaveShortenedURL(url short.ShortURL) (err error)
-	ShortURLAvailable(id string) bool
-	SaveShortenedURLWithExpiration(url short.ShortURL, expireAfter time.Duration) (err error)
 	BreakCache(id string) (found bool)
+	ShortURLAvailable(id string) bool
+}
+
+// PersistentDatabase -> PersistentDatabase Interface
+type PersistentDatabase interface /* implements Database */ {
+	SaveShortenedURL(url short.ShortURL) (err error)
+
+	FindShortenedURL(id string) (res *short.ShortURL, err error)
+	BreakCache(id string) (found bool)
+	ShortURLAvailable(id string) bool
+}
+
+type TemporaryDatabase interface /* implements Database */ {
+	SaveShortenedURLWithExpiration(url short.ShortURL, expireAfter time.Duration) (err error)
+	Heartbeat() (err error)
+
+	FindShortenedURL(id string) (res *short.ShortURL, err error)
+	BreakCache(id string) (found bool)
+	ShortURLAvailable(id string) bool
 }
 
 // Must -> Don't use database, if some error occurred

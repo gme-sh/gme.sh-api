@@ -2,19 +2,23 @@ package db
 
 import (
 	"context"
+	"time"
+
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 	"github.com/patrickmn/go-cache"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 const (
-	DatabaseName            = "gme-shorts" // Database
-	ShortenedCollectionName = "stonks"     // Table
+	// DatabaseName -> Name of the Database
+	DatabaseName = "gme-shorts"
+	// ShortenedCollectionName -> Name of the collection
+	ShortenedCollectionName = "stonks"
 )
 
+// NewMongoDatabase -> Create a new MongoDB
 func NewMongoDatabase(connectionString string) (db Database, err error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(connectionString))
 	if err != nil {

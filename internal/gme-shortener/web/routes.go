@@ -2,23 +2,23 @@ package web
 
 import (
 	"encoding/base64"
-	"fmt"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
-func (ws *WebServer) handleIndex(writer http.ResponseWriter, request *http.Request) {
+/* func (ws *WebServer) handleIndex(writer http.ResponseWriter, request *http.Request) {
 	log.Println("handleIndex")
 	// Do something
-}
+} */
 
 func (ws *WebServer) handleShortCreate(writer http.ResponseWriter, request *http.Request) {
 	log.Println("handleShortCreate")
 	// Do something
 }
 
-func (ws *WebServer) handleShortURLNotFound(writer http.ResponseWriter, req *http.Request) {
+/* func (ws *WebServer) handleShortURLNotFound(writer http.ResponseWriter, req *http.Request) {
 	log.Println("handleShortURLNotFound")
 
 	vars := mux.Vars(req)
@@ -28,7 +28,7 @@ func (ws *WebServer) handleShortURLNotFound(writer http.ResponseWriter, req *htt
 		id = []byte("")
 	}
 	_, _ = fmt.Fprintf(writer, "Short %s not found\n", string(id))
-}
+} */
 
 func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Request) {
 	log.Println("handleRedirect")

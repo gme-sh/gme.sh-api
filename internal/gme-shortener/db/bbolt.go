@@ -34,7 +34,11 @@ type bboltDatabase struct {
 	cache    *cache.Cache
 }
 
-func (bbdb *bboltDatabase) FindShortenedURL(id string) (res *short.ShortURL, err error) {
+func (bbdb *bboltDatabase) FindShortenedURL(id short.ShortID) (res *short.ShortURL, err error) {
+	if o, found := bbdb.cache.Get(id.String()); found {
+		return o.(*short.ShortURL), nil
+	}
+
 	var ser []byte
 
 	if err = bbdb.database.View(func(tx *bbolt.Tx) (err error) {
@@ -49,6 +53,11 @@ func (bbdb *bboltDatabase) FindShortenedURL(id string) (res *short.ShortURL, err
 	}
 
 	err = json.Unmarshal(ser, &res)
+
+	if err == nil {
+		bbdb.cache.Set(id.String(), res, cache.DefaultExpiration)
+	}
+
 	return
 }
 
@@ -69,15 +78,23 @@ func (bbdb *bboltDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 		return
 	})
 
+	if err == nil {
+		bbdb.cache.Set(short.ID.String(), short, cache.DefaultExpiration)
+	}
+
 	return
 }
 
-func (bbdb *bboltDatabase) BreakCache(id string) (found bool) {
-	_, found = bbdb.cache.Get(id)
-	bbdb.cache.Delete(id)
+func (bbdb *bboltDatabase) BreakCache(id short.ShortID) (found bool) {
+	_, found = bbdb.cache.Get(id.String())
+	bbdb.cache.Delete(id.String())
 	return
 }
 
-func (bbdb *bboltDatabase) ShortURLAvailable(id string) bool {
+func (bbdb *bboltDatabase) ShortURLAvailable(id short.ShortID) bool {
+	if _, found := bbdb.cache.Get(id.String()); found {
+		return false
+	}
+
 	return shortURLAvailable(bbdb, id)
 }

@@ -50,9 +50,9 @@ func (mdb *mongoDatabase) shortsCollection() *mongo.Collection {
 	return mdb.client.Database(mdb.database).Collection(ShortenedCollectionName)
 }
 
-func (mdb *mongoDatabase) FindShortenedURL(id string) (res *short.ShortURL, err error) {
+func (mdb *mongoDatabase) FindShortenedURL(id short.ShortID) (res *short.ShortURL, err error) {
 	// find in cache
-	if s, found := mdb.cache.Get(id); found {
+	if s, found := mdb.cache.Get(id.String()); found {
 		return s.(*short.ShortURL), nil
 	}
 
@@ -69,7 +69,7 @@ func (mdb *mongoDatabase) FindShortenedURL(id string) (res *short.ShortURL, err 
 
 	// save to cache
 	if err == nil {
-		mdb.cache.Set(id, res, cache.DefaultExpiration)
+		mdb.cache.Set(id.String(), res, cache.DefaultExpiration)
 	}
 
 	return
@@ -92,12 +92,12 @@ func (mdb *mongoDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 	return nil
 }
 
-func (mdb *mongoDatabase) BreakCache(id string) (found bool) {
-	_, found = mdb.cache.Get(id)
-	mdb.cache.Delete(id)
+func (mdb *mongoDatabase) BreakCache(id short.ShortID) (found bool) {
+	_, found = mdb.cache.Get(id.String())
+	mdb.cache.Delete(id.String())
 	return
 }
 
-func (mdb *mongoDatabase) ShortURLAvailable(id string) bool {
+func (mdb *mongoDatabase) ShortURLAvailable(id short.ShortID) bool {
 	return shortURLAvailable(mdb, id)
 }

@@ -65,7 +65,7 @@ func dieStats(w http.ResponseWriter, o interface{}) {
 // GET /api/v1/stats/{id}
 func (ws *WebServer) handleApiV1Stats(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	alias := vars["id"]
+	alias := short.ShortID(vars["id"])
 
 	// find shorted url
 	if available := ws.PersistentDatabase.ShortURLAvailable(alias); available {

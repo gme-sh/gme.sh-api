@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/base64"
+	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 	"log"
 	"net/http"
 
@@ -34,7 +35,7 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 	log.Println("handleRedirect")
 
 	vars := mux.Vars(request)
-	id := vars["id"]
+	id := short.ShortID(vars["id"])
 
 	// look for redirection
 	url, err := ws.FindShortenedURL(id)

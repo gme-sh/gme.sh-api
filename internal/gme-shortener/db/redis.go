@@ -9,7 +9,6 @@ import (
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
 	"github.com/go-redis/redis/v8"
-	"github.com/patrickmn/go-cache"
 )
 
 // NewRedisClient -> Create a new Redis client
@@ -23,7 +22,6 @@ func NewRedisClient(cfg config.RedisConfig) *redis.Client {
 
 type redisDB struct {
 	client  *redis.Client
-	cache   *cache.Cache
 	context context.Context
 }
 
@@ -43,25 +41,31 @@ func NewRedisDatabase(cfg config.RedisConfig) (Database, error) {
 
 	return &redisDB{
 		client:  client,
-		cache:   cache.New(15*time.Minute, 10*time.Minute),
 		context: ctx,
 	}, nil
 }
 
-func (rdb *redisDB) FindShortenedURL(id string) (res *short.ShortURL, err error) {
+func (rdb *redisDB) FindShortenedURL(id short.ShortID) (res *short.ShortURL, err error) {
 	var data *redis.StringCmd
-	data = rdb.client.Get(rdb.context, "short::"+id)
+	data = rdb.client.Get(rdb.context, id.RedisKey())
 	err = data.Err()
 	if err != nil {
 		return nil, err
 	}
 
 	err = json.Unmarshal([]byte(data.Val()), &res)
+
 	return
 }
 
 func (rdb *redisDB) SaveShortenedURL(short *short.ShortURL) (err error) {
-	return nil
+	var data []byte
+	data, err = json.Marshal(short)
+	if err != nil {
+		return
+	}
+	err = rdb.client.Set(rdb.context, short.ID.RedisKey(), string(data), redis.KeepTTL).Err()
+	return
 }
 
 func (rdb *redisDB) SaveShortenedURLWithExpiration(url *short.ShortURL, expireAfter time.Duration) (err error) {
@@ -75,17 +79,19 @@ func (rdb *redisDB) SaveShortenedURLWithExpiration(url *short.ShortURL, expireAf
 	return
 }
 
-func (rdb *redisDB) BreakCache(id string) (found bool) {
-	_, found = rdb.cache.Get(id)
-	rdb.cache.Delete(id)
-	return
+func (rdb *redisDB) BreakCache(_ short.ShortID) (found bool) {
+	return false
 }
 
-func (rdb *redisDB) ShortURLAvailable(id string) bool {
+func (rdb *redisDB) ShortURLAvailable(id short.ShortID) bool {
 	return shortURLAvailable(rdb, id)
 }
 
 func (rdb *redisDB) Heartbeat() (err error) {
 	err = rdb.client.Set(rdb.context, "heartbeat", 1, 1*time.Second).Err()
 	return
+}
+
+func (rdb *redisDB) FindStats(id short.ShortID) *short.Stats {
+	return nil
 }

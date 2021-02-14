@@ -40,7 +40,7 @@ type mariaDB struct {
 	cache *cache.Cache
 }
 
-func (sql *mariaDB) FindShortenedURL(id string) (res *short.ShortURL, err error) {
+func (sql *mariaDB) FindShortenedURL(id short.ShortID) (res *short.ShortURL, err error) {
 	return nil, nil
 }
 
@@ -48,12 +48,12 @@ func (sql *mariaDB) SaveShortenedURL(url *short.ShortURL) (err error) {
 	return nil
 }
 
-func (sql *mariaDB) BreakCache(id string) (found bool) {
-	_, found = sql.cache.Get(id)
-	sql.cache.Delete(id)
+func (sql *mariaDB) BreakCache(id short.ShortID) (found bool) {
+	_, found = sql.cache.Get(id.String())
+	sql.cache.Delete(id.String())
 	return
 }
 
-func (sql *mariaDB) ShortURLAvailable(id string) bool {
+func (sql *mariaDB) ShortURLAvailable(id short.ShortID) bool {
 	return shortURLAvailable(sql, id)
 }

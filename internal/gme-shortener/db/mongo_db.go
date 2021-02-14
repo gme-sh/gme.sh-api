@@ -99,5 +99,8 @@ func (mdb *mongoDatabase) BreakCache(id short.ShortID) (found bool) {
 }
 
 func (mdb *mongoDatabase) ShortURLAvailable(id short.ShortID) bool {
+	if _, found := mdb.cache.Get(id.String()); found {
+		return false
+	}
 	return shortURLAvailable(mdb, id)
 }

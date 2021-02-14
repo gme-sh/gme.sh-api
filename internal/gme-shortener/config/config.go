@@ -1,19 +1,25 @@
 package config
 
+type DatabaseConfig struct {
+	Backend string
+	Mongo   *MongoConfig
+	Redis   *RedisConfig
+	BBolt   *BBoltConfig
+}
+
 // Config --> Config for Database implementations
 type Config struct {
-	Mongo *MongoConfig
-	Redis *RedisConfig
-	BBolt *BBoltConfig
+	Database *DatabaseConfig
 }
 
 // MongoConfig -> Config for MongoDB implementation
 type MongoConfig struct {
-	ApplyURI string `json:"apply_uri"`
+	ApplyURI string
 }
 
 // RedisConfig -> Config for Redis implementation
 type RedisConfig struct {
+	Use      bool
 	Addr     string
 	Password string
 	DB       int
@@ -21,5 +27,5 @@ type RedisConfig struct {
 
 // BBoltConfig -> Config for BBolt implementation
 type BBoltConfig struct {
-	path string
+	Path string
 }

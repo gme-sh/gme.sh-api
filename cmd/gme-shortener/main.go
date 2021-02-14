@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -40,24 +43,47 @@ func main() {
 		return
 	}
 
+	dbcfg := cfg.Database
+	if s, err := json.Marshal(dbcfg); err != nil {
+		log.Println("ERROR marshalling config:", err)
+	} else {
+		log.Println("config:", string(s))
+	}
+
+	// Update config from environment
 	// Get mongo from environment
 	if mdbs := os.Getenv("MONGODB_STRING"); mdbs != "" {
-		cfg.Mongo.ApplyURI = mdbs
+		dbcfg.Mongo.ApplyURI = mdbs
 	}
 
-	// connect to database
-	log.Println("└ Connecting to database")
-	database, err := db.NewMongoDatabase(cfg.Mongo.ApplyURI)
-	if err != nil {
-		log.Fatalln("Error connecting:", err)
+	// Load database
+	var database db.Database
+
+	switch strings.ToLower(dbcfg.Backend) {
+	case "mongo":
+		log.Println("👉 Using MongoDB as backend")
+		database = db.Must(db.NewMongoDatabase(dbcfg.Mongo.ApplyURI))
+		break
+	case "bbolt":
+		log.Println("👉 Using BBolt as backend")
+		database = db.Must(db.NewBBoltDatabase(dbcfg.BBolt.Path))
+		break
+	default:
+		log.Fatalln("🚨 Invalid database backend: '", dbcfg.Backend, "'")
 		return
 	}
 
-	client := db.NewRedisClient(cfg.Redis)
+	var redisClient *redis.Client = nil
 
-	if res := client.Set(context.TODO(), "heartbeat", 1, 0); res.Err() != nil {
-		log.Fatalln("Error connecting to Redis:", res.Err())
-		return
+	// Load redis
+	if dbcfg.Redis.Use {
+		log.Println("👉 Using redis")
+
+		redisClient = db.NewRedisClient(*dbcfg.Redis)
+		if res := redisClient.Set(context.TODO(), "heartbeat", 1, 0); res.Err() != nil {
+			log.Fatalln("Error connecting to Redis:", res.Err())
+			return
+		}
 	}
 
 	// Create example data
@@ -69,7 +95,7 @@ func main() {
 	}
 	log.Println("Saving to database result:", database.SaveShortenedURL(link))
 
-	server := web.NewWebServer(database)
+	server := web.NewWebServer(database, redisClient)
 	go server.Start()
 
 	log.Println("WebServer is (hopefully) up and running")

@@ -6,7 +6,7 @@ import (
 )
 
 // NewRedisClient -> Create a new Redis client
-func NewRedisClient(cfg *config.RedisConfig) *redis.Client {
+func NewRedisClient(cfg config.RedisConfig) *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr:     cfg.Addr,
 		Password: cfg.Password,

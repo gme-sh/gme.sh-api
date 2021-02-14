@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db"
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 type WebServer struct {
 	db.Database
+	redis *redis.Client
 }
 
 func (ws *WebServer) Start() {
@@ -24,8 +26,9 @@ func (ws *WebServer) Start() {
 	}
 }
 
-func NewWebServer(db db.Database) *WebServer {
+func NewWebServer(db db.Database, red *redis.Client) *WebServer {
 	return &WebServer{
 		db,
+		red,
 	}
 }

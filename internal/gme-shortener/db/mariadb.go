@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
 	"time"
 
 	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
@@ -11,18 +12,18 @@ import (
 )
 
 // NewMariaDB -> Create a new MariaDB connection
-func NewMariaDB(user, password, path string) (Database, error) {
-	conn := fmt.Sprintf("%s:%s@%s", user, password, path)
-	dab, err := sql.Open("mysql", conn)
+func NewMariaDB(config config.MariaConfig) (Database, error) {
+	conn := fmt.Sprintf("%s:%s@%s", config.User, config.Password, config.DBName)
+	database, err := sql.Open("mysql", conn)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: Create Table either in go or manually
-	dab.Query("CREATE TABLE ShortenedUrls")
+	database.Query("CREATE TABLE ShortenedUrls")
 
 	return &mariaDB{
-		db:    dab,
+		db:    database,
 		cache: cache.New(15*time.Minute, 10*time.Minute),
 	}, nil
 }

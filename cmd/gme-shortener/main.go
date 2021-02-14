@@ -64,6 +64,10 @@ func main() {
 		log.Println("👉 Using MongoDB as backend")
 		database = db.Must(db.NewMongoDatabase(dbcfg.Mongo.ApplyURI))
 		break
+	case "maria":
+		log.Println("👉 Using MariaDB as backend")
+		database = db.Must(db.NewMariaDB(*dbcfg.Maria))
+		break
 	case "bbolt":
 		log.Println("👉 Using BBolt as backend")
 		database = db.Must(db.NewBBoltDatabase(dbcfg.BBolt.Path))

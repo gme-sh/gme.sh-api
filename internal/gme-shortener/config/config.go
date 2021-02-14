@@ -5,6 +5,7 @@ type DatabaseConfig struct {
 	Mongo   *MongoConfig
 	Redis   *RedisConfig
 	BBolt   *BBoltConfig
+	Maria   *MariaConfig
 }
 
 // Config --> Config for Database implementations
@@ -24,24 +25,17 @@ type RedisConfig struct {
 	Password string
 	DB       int
 }
-<<<<<<< HEAD
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> main
 
 // BBoltConfig -> Config for BBolt implementation
 type BBoltConfig struct {
 	Path string
 }
-<<<<<<< HEAD
-=======
 
 // MariaConfig -> Config for Maria Imlementation
 type MariaConfig struct {
-	user     string
-	password string
-	dbname   string
+	Addr        string
+	User        string
+	Password    string
+	DBName      string
+	TablePrefix string
 }
->>>>>>> Stashed changes
->>>>>>> main

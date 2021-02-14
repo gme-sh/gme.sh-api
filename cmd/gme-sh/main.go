@@ -9,13 +9,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db/heartbeat"
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db/heartbeat"
 	"github.com/go-redis/redis/v8"
 
 	"github.com/BurntSushi/toml"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/web"
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/web"
 )
 
 const (

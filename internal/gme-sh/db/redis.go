@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
-	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
+	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	"github.com/go-redis/redis/v8"
 )
 

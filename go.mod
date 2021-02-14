@@ -1,9 +1,10 @@
-module github.com/full-stack-gods/GMEshortener
+module github.com/full-stack-gods/gme.sh-api
 
 go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.3.1
+	github.com/full-stack-gods/GMEshortener v0.0.0-20210214131423-5b2b5ad5696c
 	github.com/go-redis/redis/v8 v8.5.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gorilla/mux v1.8.0

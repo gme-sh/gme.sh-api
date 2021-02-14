@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
+	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	"github.com/patrickmn/go-cache"
 	"go.etcd.io/bbolt"
 )

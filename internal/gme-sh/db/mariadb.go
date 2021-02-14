@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/config"
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
 
-	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
+	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	_ "github.com/go-sql-driver/mysql" // mysql database driver
 	"github.com/patrickmn/go-cache"
 )

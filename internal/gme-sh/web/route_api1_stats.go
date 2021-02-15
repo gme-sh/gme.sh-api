@@ -3,8 +3,9 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
+	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 )
 
@@ -65,23 +66,29 @@ func dieStats(w http.ResponseWriter, o interface{}) {
 // GET /api/v1/stats/{id}
 func (ws *WebServer) handleApiV1Stats(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	alias := vars["id"]
+	alias := short.ShortID(vars["id"])
+
+	log.Println("🚀", r.RemoteAddr, "requested to GET stats for", alias)
 
 	// find shorted url
-	if available := ws.PersistentDatabase.ShortURLAvailable(alias); available {
+	if available := ws.PersistentDatabase.ShortURLAvailable(&alias); available {
+		log.Println("    🤬 But", alias, "was not found")
 		dieStats(w, "url not found")
 		return
 	}
 
-	// get stats
-	// TODO: Get stats
-	res := &getStatsResponse{
-		Success: true,
-		Message: "success",
-		Stats: &short.Stats{
-			Calls: 133742069,
-		},
+	stats, err := ws.TemporaryDatabase.FindStats(&alias)
+	if err != nil {
+		log.Println("    🤬 But stats for", alias, "not found")
+		dieStats(w, err)
+		return
 	}
 
-	dieStats(w, res)
+	log.Println("    ✅ Stats:", stats)
+
+	dieStats(w, &getStatsResponse{
+		Success: true,
+		Message: "Success",
+		Stats:   stats,
+	})
 }

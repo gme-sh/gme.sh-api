@@ -2,7 +2,7 @@ package web
 
 import (
 	"fmt"
-	"github.com/full-stack-gods/GMEshortener/internal/gme-shortener/db/heartbeat"
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db/heartbeat"
 	"net/http"
 )
 

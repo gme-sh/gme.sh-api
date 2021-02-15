@@ -1,5 +1,7 @@
 package config
 
+import "os"
+
 // DatabaseConfig -> Config for PersistentDatabase implementations
 type DatabaseConfig struct {
 	Backend string
@@ -16,7 +18,9 @@ type Config struct {
 
 // MongoConfig -> Config for MongoDB implementation
 type MongoConfig struct {
-	ApplyURI string
+	ApplyURI           string
+	Database           string
+	ShortURLCollection string
 }
 
 // RedisConfig -> Config for Redis implementation
@@ -29,7 +33,9 @@ type RedisConfig struct {
 
 // BBoltConfig -> Config for BBolt implementation
 type BBoltConfig struct {
-	Path string
+	Path                  string
+	FileMode              os.FileMode
+	ShortedURLsBucketName string
 }
 
 // MariaConfig -> Config for Maria Imlementation

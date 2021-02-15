@@ -3,22 +3,23 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/full-stack-gods/GMEshortener/pkg/gme-shortener/short"
+	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 )
 
 type createShortURLPayload struct {
-	FullURL            string
-	PreferredAlias     string
-	ExpireAfterSeconds int
+	FullURL            string `json:"full_url"`
+	PreferredAlias     string `json:"preferred_alias"`
+	ExpireAfterSeconds int    `json:"expire_after_seconds"`
 }
 
 type createShortURLResponse struct {
-	Success bool
-	Message string
-	Short   *short.ShortURL
+	Success bool            `json:"success"`
+	Message string          `json:"message"`
+	Short   *short.ShortURL `json:"short"`
 }
 
 func dieCreate(w http.ResponseWriter, o interface{}) {
@@ -76,9 +77,12 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 	}()
 
+	log.Println("🚀", r.RemoteAddr, "requested to POST create a new short URL")
+
 	// read body
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		log.Println("    🤬 But the body was weird (read)")
 		dieCreate(w, err)
 		return
 	}
@@ -87,6 +91,7 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 	var req *createShortURLPayload
 	err = json.Unmarshal(body, &req)
 	if err != nil {
+		log.Println("    🤬 But the body was weird (json)")
 		dieCreate(w, err)
 		return
 	}
@@ -94,34 +99,41 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 	/// Generate ID and check if alias already exists
 	if req.PreferredAlias == "" {
 		if generated := short.GenerateShortID(ws.PersistentDatabase.ShortURLAvailable); generated != "" {
-			req.PreferredAlias = generated
+			req.PreferredAlias = generated.String()
 		} else {
+			log.Println("    🤬 But all tried aliases were already occupied")
 			dieCreate(w, "generated id not available")
 			return
 		}
 	}
+	log.Println("    ☑️ Preferred alias:", req.PreferredAlias)
+	aliasID := short.ShortID(req.PreferredAlias)
 
 	// check if alias already exists
-	if available := ws.PersistentDatabase.ShortURLAvailable(req.PreferredAlias); !available {
+	if available := ws.PersistentDatabase.ShortURLAvailable(&aliasID); !available {
+		log.Println("    🤬 But the preferred was already occupied")
 		dieCreate(w, "preferred alias is not available")
 		return
 	}
 	///
 
 	// create short id
+	secret := short.GenerateID(32, short.AlwaysTrue, 0)
 	sh := &short.ShortURL{
 		ID:           short.ShortID(req.PreferredAlias),
 		FullURL:      req.FullURL,
 		CreationDate: time.Now(),
-		Secret:       short.GenerateID(32, short.AlwaysTrue, 0),
+		Secret:       secret.String(),
 	}
 
 	// try to save shorted url
 	if err := ws.PersistentDatabase.SaveShortenedURL(sh); err != nil {
+		log.Println("    🤬 But something went wrong saving")
 		dieCreate(w, err)
 		return
 	}
 
+	log.Println("    ✅ Looks like it worked out")
 	dieCreate(w, &createShortURLResponse{
 		Success: true,
 		Message: "success",

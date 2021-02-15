@@ -14,9 +14,15 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
+// PersistentDatabase
+type mariaDB struct {
+	db    *sql.DB
+	cache *cache.Cache
+}
+
 // NewMariaDB -> Create a new MariaDB connection
-func NewMariaDB(config config.MariaConfig) (PersistentDatabase, error) {
-	conn := fmt.Sprintf("%s:%s@%s", config.User, config.Password, config.DBName)
+func NewMariaDB(cfg *config.MariaConfig) (PersistentDatabase, error) {
+	conn := fmt.Sprintf("%s:%s@%s", cfg.User, cfg.Password, cfg.DBName)
 	database, err := sql.Open("mysql", conn)
 	if err != nil {
 		return nil, err
@@ -37,29 +43,24 @@ func NewMariaDB(config config.MariaConfig) (PersistentDatabase, error) {
 	}, nil
 }
 
-type mariaDB struct {
-	db    *sql.DB
-	cache *cache.Cache
-}
-
-func (sql *mariaDB) FindShortenedURL(id short.ShortID) (res *short.ShortURL, err error) {
+func (sql *mariaDB) FindShortenedURL(_ *short.ShortID) (res *short.ShortURL, err error) {
 	return nil, errors.New("not implemented")
 }
 
-func (sql *mariaDB) SaveShortenedURL(url *short.ShortURL) (err error) {
+func (sql *mariaDB) SaveShortenedURL(_ *short.ShortURL) (err error) {
 	return errors.New("not implemented")
 }
 
-func (sql *mariaDB) DeleteShortenedURL(id *short.ShortID) (err error) {
+func (sql *mariaDB) DeleteShortenedURL(_ *short.ShortID) (err error) {
 	return errors.New("not implemented")
 }
 
-func (sql *mariaDB) BreakCache(id short.ShortID) (found bool) {
+func (sql *mariaDB) BreakCache(id *short.ShortID) (found bool) {
 	_, found = sql.cache.Get(id.String())
 	sql.cache.Delete(id.String())
 	return
 }
 
-func (sql *mariaDB) ShortURLAvailable(id short.ShortID) bool {
+func (sql *mariaDB) ShortURLAvailable(id *short.ShortID) bool {
 	return shortURLAvailable(sql, id)
 }

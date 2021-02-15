@@ -71,13 +71,13 @@ func (ws *WebServer) handleApiV1Stats(w http.ResponseWriter, r *http.Request) {
 	log.Println("🚀", r.RemoteAddr, "requested to GET stats for", alias)
 
 	// find shorted url
-	if available := ws.PersistentDatabase.ShortURLAvailable(alias); available {
+	if available := ws.PersistentDatabase.ShortURLAvailable(&alias); available {
 		log.Println("    🤬 But", alias, "was not found")
 		dieStats(w, "url not found")
 		return
 	}
 
-	stats, err := ws.TemporaryDatabase.FindStats(alias)
+	stats, err := ws.TemporaryDatabase.FindStats(&alias)
 	if err != nil {
 		log.Println("    🤬 But stats for", alias, "not found")
 		dieStats(w, err)

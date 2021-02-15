@@ -16,7 +16,7 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 	log.Println("🚀", request.RemoteAddr, "requested to GET redirect to", id)
 
 	// look for redirection
-	url, err := ws.PersistentDatabase.FindShortenedURL(id)
+	url, err := ws.PersistentDatabase.FindShortenedURL(&id)
 	log.Println("url, err :=", url, err)
 	if url == nil || err != nil {
 		log.Println("    🤬 But it was not found")
@@ -29,7 +29,7 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 
 	// add stats async
 	go func() {
-		if err = ws.TemporaryDatabase.AddStats(id); err != nil {
+		if err = ws.TemporaryDatabase.AddStats(&id); err != nil {
 			log.Println("    ⏱ Stats could not be stored:", err)
 		}
 	}()

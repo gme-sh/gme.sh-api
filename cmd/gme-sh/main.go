@@ -82,19 +82,19 @@ func main() {
 	switch strings.ToLower(dbcfg.Backend) {
 	case "mongo":
 		log.Println("👉 Using MongoDB as backend")
-		persistentDB = db.Must(db.NewMongoDatabase(dbcfg.Mongo.ApplyURI)).(db.PersistentDatabase)
+		persistentDB = db.Must(db.NewMongoDatabase(dbcfg.Mongo)).(db.PersistentDatabase)
 		break
 	case "maria":
 		log.Println("👉 Using MariaDB as backend")
-		persistentDB = db.Must(db.NewMariaDB(*dbcfg.Maria)).(db.PersistentDatabase)
+		persistentDB = db.Must(db.NewMariaDB(dbcfg.Maria)).(db.PersistentDatabase)
 		break
 	case "bbolt":
 		log.Println("👉 Using BBolt as backend")
-		persistentDB = db.Must(db.NewBBoltDatabase(dbcfg.BBolt.Path)).(db.PersistentDatabase)
+		persistentDB = db.Must(db.NewBBoltDatabase(dbcfg.BBolt)).(db.PersistentDatabase)
 		break
 	case "redis":
 		log.Println("👉 Using Redis as backend")
-		redisDB := db.Must(db.NewRedisDatabase(*dbcfg.Redis))
+		redisDB := db.Must(db.NewRedisDatabase(dbcfg.Redis))
 
 		persistentDB = redisDB.(db.PersistentDatabase)
 		tempDB = redisDB.(db.TemporaryDatabase)
@@ -111,7 +111,7 @@ func main() {
 		log.Println("👉 Using redis as temporary database")
 
 		if tempDB == nil {
-			tempDB = db.Must(db.NewRedisDatabase(*dbcfg.Redis)).(db.TemporaryDatabase)
+			tempDB = db.Must(db.NewRedisDatabase(dbcfg.Redis)).(db.TemporaryDatabase)
 		}
 	}
 

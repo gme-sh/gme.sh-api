@@ -107,9 +107,10 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Println("    ☑️ Preferred alias:", req.PreferredAlias)
+	aliasID := short.ShortID(req.PreferredAlias)
 
 	// check if alias already exists
-	if available := ws.PersistentDatabase.ShortURLAvailable(short.ShortID(req.PreferredAlias)); !available {
+	if available := ws.PersistentDatabase.ShortURLAvailable(&aliasID); !available {
 		log.Println("    🤬 But the preferred was already occupied")
 		dieCreate(w, "preferred alias is not available")
 		return

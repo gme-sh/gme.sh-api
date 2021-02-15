@@ -14,6 +14,12 @@ func FromEnv(config *DatabaseConfig) {
 	if mdbap := os.Getenv("MONGODB_APPLYURI"); mdbap != "" {
 		config.Mongo.ApplyURI = mdbap
 	}
+	if val := os.Getenv("MONGO_DATABASE"); val != "" {
+		config.Mongo.Database = val
+	}
+	if val := os.Getenv("MONGO_SHORT_URL_COLLECTION"); val != "" {
+		config.Mongo.ShortURLCollection = val
+	}
 
 	// Redis
 	if rduse := os.Getenv("REDIS_USE"); rduse != "" {
@@ -30,13 +36,24 @@ func FromEnv(config *DatabaseConfig) {
 		if err == nil {
 			config.Redis.DB = atoi
 		} else {
-			log.Fatalln("🚨 Invalid number (int):", rddb)
+			log.Fatalln("🚨 REDIS_DB: Invalid number (int):", rddb, "(error):", err)
 		}
 	}
 
 	// BBolt
 	if bbp := os.Getenv("BBOLT_PATH"); bbp != "" {
 		config.BBolt.Path = bbp
+	}
+	if val := os.Getenv("BBOLT_FILE_MODE"); val != "" {
+		i, err := strconv.Atoi(val)
+		if err == nil {
+			config.BBolt.FileMode = os.FileMode(i)
+		} else {
+			log.Fatalln("🚨 BBOLT_FILE_MODE: Invalid number (int):", val, "(error):", err)
+		}
+	}
+	if val := os.Getenv("BBOLT_SHORTED_URL_BUCKET_NAME"); val != "" {
+		config.BBolt.ShortedURLsBucketName = val
 	}
 
 	// MariaDB

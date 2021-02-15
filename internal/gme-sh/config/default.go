@@ -15,7 +15,9 @@ func CreateDefault() (err error) {
 		Database: &DatabaseConfig{
 			Backend: "mongo",
 			Mongo: &MongoConfig{
-				ApplyURI: "mongodb://localhost:27017",
+				ApplyURI:           "mongodb://localhost:27017",
+				Database:           "stonksdb",
+				ShortURLCollection: "stonks-url-collection",
 			},
 			Redis: &RedisConfig{
 				Use:      true,
@@ -24,7 +26,9 @@ func CreateDefault() (err error) {
 				DB:       0,
 			},
 			BBolt: &BBoltConfig{
-				Path: "dbgoesbrr.rr",
+				Path:                  "dbgoesbrr.rr",
+				FileMode:              0666,
+				ShortedURLsBucketName: "stonks-url-bucket",
 			},
 			Maria: &MariaConfig{
 				Addr:        "localhost",

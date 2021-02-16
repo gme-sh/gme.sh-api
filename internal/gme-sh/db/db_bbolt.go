@@ -10,12 +10,12 @@ import (
 // PersistentDatabase
 type bboltDatabase struct {
 	database              *bbolt.DB
-	cache                 *SharedCache
+	cache                 DBCache
 	shortedURLsBucketName []byte
 }
 
 // NewBBoltDatabase -> Create new BBoltDatabase
-func NewBBoltDatabase(cfg *config.BBoltConfig, cache *SharedCache) (bbdb PersistentDatabase, err error) {
+func NewBBoltDatabase(cfg *config.BBoltConfig, cache DBCache) (bbdb PersistentDatabase, err error) {
 	// Open file {path} with permission-mode 0666
 	// 0666 = All users can read/write, but cannot execute
 	// 666 = 110 (u) 110 (g) 110 (o)
@@ -91,7 +91,7 @@ func (bdb *bboltDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
 		return
 	})
 	if err == nil {
-		_, err = bdb.cache.BreakCache(id)
+		err = bdb.cache.BreakCache(id)
 	}
 	return
 }

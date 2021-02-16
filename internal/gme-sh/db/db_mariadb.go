@@ -4,24 +4,21 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"time"
-
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
+	"io/ioutil"
 
 	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	_ "github.com/go-sql-driver/mysql" // mysql database driver
-	"github.com/patrickmn/go-cache"
 )
 
 // PersistentDatabase
 type mariaDB struct {
 	db    *sql.DB
-	cache *cache.Cache
+	cache DBCache
 }
 
 // NewMariaDB -> Create a new MariaDB connection
-func NewMariaDB(cfg *config.MariaConfig) (PersistentDatabase, error) {
+func NewMariaDB(cfg *config.MariaConfig, cache DBCache) (PersistentDatabase, error) {
 	conn := fmt.Sprintf("%s:%s@%s", cfg.User, cfg.Password, cfg.DBName)
 	database, err := sql.Open("mysql", conn)
 	if err != nil {
@@ -39,7 +36,7 @@ func NewMariaDB(cfg *config.MariaConfig) (PersistentDatabase, error) {
 
 	return &mariaDB{
 		db:    database,
-		cache: cache.New(15*time.Minute, 10*time.Minute),
+		cache: cache,
 	}, nil
 }
 

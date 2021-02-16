@@ -13,7 +13,7 @@ import (
 type mongoDatabase struct {
 	client             *mongo.Client
 	context            context.Context
-	cache              *SharedCache
+	cache              DBCache
 	database           string
 	shortURLCollection string
 }
@@ -22,7 +22,7 @@ var updateOptions = options.Update().SetUpsert(true)
 
 // NewMongoDatabase -> Creates a new implementation of PersistentDatabase (mongodb),
 // connects, and returns it
-func NewMongoDatabase(cfg *config.MongoConfig, cache *SharedCache) (db PersistentDatabase, err error) {
+func NewMongoDatabase(cfg *config.MongoConfig, cache DBCache) (db PersistentDatabase, err error) {
 	// create client
 	opts := options.Client().ApplyURI(cfg.ApplyURI)
 	client, err := mongo.NewClient(opts)
@@ -98,7 +98,7 @@ func (mdb *mongoDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
 	// Also remove the object from the cache
 	if err == nil {
 		// remove from cache
-		_, err = mdb.cache.BreakCache(id)
+		err = mdb.cache.BreakCache(id)
 	}
 	return
 }

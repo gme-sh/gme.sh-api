@@ -13,7 +13,8 @@ func CreateDefault() (err error) {
 	e := toml.NewEncoder(&buf)
 	err = e.Encode(Config{
 		Database: &DatabaseConfig{
-			Backend: "mongo",
+			Backend:           "mongo",
+			EnableSharedCache: true,
 			Mongo: &MongoConfig{
 				ApplyURI:           "mongodb://localhost:27017",
 				Database:           "stonksdb",

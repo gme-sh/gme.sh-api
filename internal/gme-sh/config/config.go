@@ -4,11 +4,12 @@ import "os"
 
 // DatabaseConfig -> Config for PersistentDatabase implementations
 type DatabaseConfig struct {
-	Backend string
-	Mongo   *MongoConfig
-	Redis   *RedisConfig
-	BBolt   *BBoltConfig
-	Maria   *MariaConfig
+	Backend           string
+	EnableSharedCache bool
+	Mongo             *MongoConfig
+	Redis             *RedisConfig
+	BBolt             *BBoltConfig
+	Maria             *MariaConfig
 }
 
 // Config --> Config for Database implementations

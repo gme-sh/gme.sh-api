@@ -2,13 +2,10 @@ package db
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
-	"github.com/patrickmn/go-cache"
 	"log"
 	"strings"
-	"time"
 )
 
 const (
@@ -17,55 +14,41 @@ const (
 )
 
 type SharedCache struct {
-	NodeID  string
-	Cache   *cache.Cache
-	temp    TemporaryDatabase
-	enabled bool
-	share   bool
+	NodeID string
+	tempDB TemporaryDatabase
+	local  *LocalCache
 }
 
-func NewSharedCache(tempDB TemporaryDatabase, enabled, share bool) *SharedCache {
+func NewSharedCache(tempDB TemporaryDatabase) *SharedCache {
 	return &SharedCache{
-		NodeID:  string(short.GenerateID(6, short.AlwaysTrue, 0)),
-		Cache:   cache.New(15*time.Minute, 20*time.Minute),
-		temp:    tempDB,
-		enabled: enabled,
-		share:   share,
+		NodeID: string(short.GenerateID(6, short.AlwaysTrue, 0)),
+		tempDB: tempDB,
+		local:  NewLocalCache(),
 	}
 }
 
 func (s *SharedCache) UpdateCache(u *short.ShortURL) (err error) {
-	if !s.enabled {
-		return errors.New("shared cache is not enabled")
+	err = s.local.UpdateCache(u)
+	if err != nil {
+		return
 	}
-	s.Cache.Set(u.ID.String(), u, cache.DefaultExpiration)
-
-	if s.share {
-		log.Println("Publishing update for #", u.ID.String(), "...")
-		err = s.temp.Publish(s.createSCacheUpdatePayload(u))
-	}
+	log.Println("Publishing update for #", u.ID.String(), "...")
+	err = s.tempDB.Publish(s.createSCacheUpdatePayload(u))
 	return
 }
 
-func (s *SharedCache) BreakCache(id *short.ShortID) (found bool, err error) {
-	if !s.enabled {
-		return false, nil
-	}
-	_, found = s.Cache.Get(id.String())
-	s.Cache.Delete(id.String())
+func (s *SharedCache) BreakCache(id *short.ShortID) (err error) {
+	// since the BreakCache from LocalCache always returns nil,
+	// we don't have to deal with any exception here
+	err = s.local.BreakCache(id)
 
-	if s.share {
-		log.Println("Publishing break for #", id.String(), "...")
-		err = s.temp.Publish(s.createSCacheBreakPayload(id))
-	}
+	log.Println("Publishing break for #", id.String(), "...")
+	err = s.tempDB.Publish(s.createSCacheBreakPayload(id))
 	return
 }
 
 func (s *SharedCache) Get(key string) (interface{}, bool) {
-	if !s.enabled {
-		return nil, false
-	}
-	return s.Cache.Get(key)
+	return s.local.Get(key)
 }
 
 func extractID(in *string) (id string) {
@@ -104,7 +87,7 @@ func (s *SharedCache) createSCacheBreakPayload(i *short.ShortID) (string, string
 }
 
 func (s *SharedCache) Subscribe() (err error) {
-	err = s.temp.Subscribe(func(channel, payload string) {
+	err = s.tempDB.Subscribe(func(channel, payload string) {
 		switch channel {
 		case SCacheChannelUpdate:
 			// publish gme.sh-scache:update <nodeid> <json>
@@ -127,7 +110,7 @@ func (s *SharedCache) Subscribe() (err error) {
 			}
 
 			// save to PersistentDatabase
-			s.Cache.Set(sh.ID.String(), sh, cache.DefaultExpiration)
+			_ = s.local.UpdateCache(sh)
 			log.Println("DEBUG x SCacheChannelUpdate :: Cached short-url (by subscribe):", payload)
 
 			break
@@ -141,14 +124,14 @@ func (s *SharedCache) Subscribe() (err error) {
 				return
 			}
 
-			log.Println("DEBUG x SCacheChannelBreak :: ShortID:", payload)
+			id := short.ShortID(payload)
+			log.Println("DEBUG x SCacheChannelBreak :: ShortID:", id)
 
 			// remove from cache
-			s.Cache.Delete(payload)
-
+			_ = s.local.BreakCache(&id)
 			break
 		default:
-			log.Println("WARN: Subscibed to a channl we don't know")
+			log.Println("WARN: Subscibed to a channel we don't know")
 		}
 	}, SCacheChannelBreak, SCacheChannelUpdate)
 	return

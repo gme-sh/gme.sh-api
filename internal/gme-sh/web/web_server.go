@@ -2,7 +2,6 @@ package web
 
 import (
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
-	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 type WebServer struct {
 	db.PersistentDatabase
 	db.TemporaryDatabase
-	redis *redis.Client
 }
 
 func (ws *WebServer) Start() {
@@ -28,10 +26,9 @@ func (ws *WebServer) Start() {
 	}
 }
 
-func NewWebServer(persistent db.PersistentDatabase, temporary db.TemporaryDatabase, red *redis.Client) *WebServer {
+func NewWebServer(persistent db.PersistentDatabase, temporary db.TemporaryDatabase) *WebServer {
 	return &WebServer{
 		persistent,
 		temporary,
-		red,
 	}
 }

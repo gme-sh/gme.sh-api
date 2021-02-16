@@ -9,12 +9,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db/heartbeat"
-	"github.com/go-redis/redis/v8"
-
 	"github.com/BurntSushi/toml"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db/heartbeat"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/web"
 )
 
@@ -79,47 +77,54 @@ func main() {
 	// tempDB is used to store temporary information for short urls (eg. stats, caching)
 	var tempDB db.TemporaryDatabase
 
-	var redisClient *redis.Client = nil
-
 	if strings.ToLower(dbcfg.Backend) == "redis" {
 		log.Println("👉 Using Redis as backend")
 		redisDB := db.Must(db.NewRedisDatabase(dbcfg.Redis))
 
 		persistentDB = redisDB.(db.PersistentDatabase)
 		tempDB = redisDB.(db.TemporaryDatabase)
-	} else {
-		// Load redis
-		if dbcfg.Redis.Use {
-			log.Println("👉 Using redis as temporary database")
+	}
+	if dbcfg.Redis.Use {
+		log.Println("👉 Using redis as temporary database")
 
-			if tempDB == nil {
-				tempDB = db.Must(db.NewRedisDatabase(dbcfg.Redis)).(db.TemporaryDatabase)
-			}
+		if tempDB == nil {
+			tempDB = db.Must(db.NewRedisDatabase(dbcfg.Redis)).(db.TemporaryDatabase)
 		}
 	}
 
-	// create shared cache
-	scache := db.NewSharedCache(tempDB, true, true)
-	// subscribe
-	go func() {
-		log.Println("SCACHE :: Subscribing to redis channels ...")
-		if err := scache.Subscribe(); err != nil {
-			log.Println("SCACHE :: Error:", err)
+	var cache db.DBCache
+
+	if dbcfg.EnableSharedCache {
+		if tempDB == nil {
+			log.Fatalln("Cannot enable shared cache when no temporary database is set! (e. g. Redis)")
+			return
 		}
-	}()
+		cache = db.NewSharedCache(tempDB)
+
+		// subscribe to shared cache
+		// e. g. Redis Pub-Sub
+		go func() {
+			log.Println("SCACHE :: Subscribing to redis channels ...")
+			if err := cache.(*db.SharedCache).Subscribe(); err != nil {
+				log.Println("SCACHE :: Error:", err)
+			}
+		}()
+	} else {
+		cache = db.NewLocalCache()
+	}
 
 	switch strings.ToLower(dbcfg.Backend) {
 	case "mongo":
 		log.Println("👉 Using MongoDB as backend")
-		persistentDB = db.Must(db.NewMongoDatabase(dbcfg.Mongo, scache)).(db.PersistentDatabase)
+		persistentDB = db.Must(db.NewMongoDatabase(dbcfg.Mongo, cache)).(db.PersistentDatabase)
 		break
 	case "maria":
 		log.Println("👉 Using MariaDB as backend")
-		persistentDB = db.Must(db.NewMariaDB(dbcfg.Maria)).(db.PersistentDatabase)
+		persistentDB = db.Must(db.NewMariaDB(dbcfg.Maria, cache)).(db.PersistentDatabase)
 		break
 	case "bbolt":
 		log.Println("👉 Using BBolt as backend")
-		persistentDB = db.Must(db.NewBBoltDatabase(dbcfg.BBolt, scache)).(db.PersistentDatabase)
+		persistentDB = db.Must(db.NewBBoltDatabase(dbcfg.BBolt, cache)).(db.PersistentDatabase)
 		break
 	case "redis":
 		break
@@ -137,7 +142,7 @@ func main() {
 	////
 
 	//// Web-Server
-	server := web.NewWebServer(persistentDB, tempDB, redisClient)
+	server := web.NewWebServer(persistentDB, tempDB)
 	go server.Start()
 	////
 

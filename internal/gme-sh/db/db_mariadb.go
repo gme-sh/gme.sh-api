@@ -55,12 +55,6 @@ func (sql *mariaDB) DeleteShortenedURL(_ *short.ShortID) (err error) {
 	return errors.New("not implemented")
 }
 
-func (sql *mariaDB) BreakCache(id *short.ShortID) (found bool) {
-	_, found = sql.cache.Get(id.String())
-	sql.cache.Delete(id.String())
-	return
-}
-
 func (sql *mariaDB) ShortURLAvailable(id *short.ShortID) bool {
 	return shortURLAvailable(sql, id)
 }

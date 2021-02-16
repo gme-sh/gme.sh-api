@@ -3,19 +3,17 @@ package db
 import (
 	"context"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
-	"time"
-
 	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
-	"github.com/patrickmn/go-cache"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 )
 
 // PersistentDatabase
 type mongoDatabase struct {
 	client             *mongo.Client
 	context            context.Context
-	cache              *cache.Cache
+	cache              *SharedCache
 	database           string
 	shortURLCollection string
 }
@@ -24,7 +22,7 @@ var updateOptions = options.Update().SetUpsert(true)
 
 // NewMongoDatabase -> Creates a new implementation of PersistentDatabase (mongodb),
 // connects, and returns it
-func NewMongoDatabase(cfg *config.MongoConfig) (db PersistentDatabase, err error) {
+func NewMongoDatabase(cfg *config.MongoConfig, cache *SharedCache) (db PersistentDatabase, err error) {
 	// create client
 	opts := options.Client().ApplyURI(cfg.ApplyURI)
 	client, err := mongo.NewClient(opts)
@@ -44,7 +42,7 @@ func NewMongoDatabase(cfg *config.MongoConfig) (db PersistentDatabase, err error
 		context:            ctx,
 		database:           cfg.Database,
 		shortURLCollection: cfg.ShortURLCollection,
-		cache:              cache.New(10*time.Minute, 15*time.Minute),
+		cache:              cache,
 	}, nil
 }
 
@@ -61,9 +59,11 @@ func (mdb *mongoDatabase) shortURLs() *mongo.Collection {
 func (mdb *mongoDatabase) FindShortenedURL(id *short.ShortID) (shortURL *short.ShortURL, err error) {
 	// At first, try to load the object from the cache
 	if s, found := mdb.cache.Get(id.String()); found {
+		log.Println("-> FindShortenedURL not in cache")
 		return s.(*short.ShortURL), nil
 	}
 	result := mdb.shortURLs().FindOne(mdb.context, id.BsonFilter())
+	log.Println("-> not in cache. Result with filter", id.BsonFilter(), " (error) :", result.Err())
 	if err = result.Err(); err != nil {
 		return
 	}
@@ -73,7 +73,7 @@ func (mdb *mongoDatabase) FindShortenedURL(id *short.ShortID) (shortURL *short.S
 	// The object is removed from the cache after 10 minutes, or by the BreakCache method,
 	// which is called among other things when the hint comes via Redis Pub-Sub
 	if err == nil {
-		mdb.cache.Set(id.String(), shortURL, cache.DefaultExpiration)
+		err = mdb.cache.UpdateCache(shortURL)
 	}
 	return
 }
@@ -87,7 +87,7 @@ func (mdb *mongoDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 	)
 	// Now we save/replace the object to the cache to spare the Mongo database.
 	if err == nil {
-		mdb.cache.Set(short.ID.String(), short, cache.DefaultExpiration)
+		err = mdb.cache.UpdateCache(short)
 	}
 	return
 }
@@ -98,7 +98,7 @@ func (mdb *mongoDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
 	// Also remove the object from the cache
 	if err == nil {
 		// remove from cache
-		mdb.BreakCache(id)
+		_, err = mdb.cache.BreakCache(id)
 	}
 	return
 }
@@ -108,13 +108,6 @@ func (mdb *mongoDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
  *                          D E F A U L T   I M P L E M E N T A T I O N S
  * ==================================================================================================
  */
-
-func (mdb *mongoDatabase) BreakCache(id *short.ShortID) (found bool) {
-	_, found = mdb.cache.Get(id.String())
-	mdb.cache.Delete(id.String())
-	return
-}
-
 func (mdb *mongoDatabase) ShortURLAvailable(id *short.ShortID) bool {
 	if _, found := mdb.cache.Get(id.String()); found {
 		return false

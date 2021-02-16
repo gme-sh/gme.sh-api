@@ -79,10 +79,39 @@ func main() {
 	// tempDB is used to store temporary information for short urls (eg. stats, caching)
 	var tempDB db.TemporaryDatabase
 
+	var redisClient *redis.Client = nil
+
+	if strings.ToLower(dbcfg.Backend) == "redis" {
+		log.Println("👉 Using Redis as backend")
+		redisDB := db.Must(db.NewRedisDatabase(dbcfg.Redis))
+
+		persistentDB = redisDB.(db.PersistentDatabase)
+		tempDB = redisDB.(db.TemporaryDatabase)
+	} else {
+		// Load redis
+		if dbcfg.Redis.Use {
+			log.Println("👉 Using redis as temporary database")
+
+			if tempDB == nil {
+				tempDB = db.Must(db.NewRedisDatabase(dbcfg.Redis)).(db.TemporaryDatabase)
+			}
+		}
+	}
+
+	// create shared cache
+	scache := db.NewSharedCache(tempDB, true, true)
+	// subscribe
+	go func() {
+		log.Println("SCACHE :: Subscribing to redis channels ...")
+		if err := scache.Subscribe(); err != nil {
+			log.Println("SCACHE :: Error:", err)
+		}
+	}()
+
 	switch strings.ToLower(dbcfg.Backend) {
 	case "mongo":
 		log.Println("👉 Using MongoDB as backend")
-		persistentDB = db.Must(db.NewMongoDatabase(dbcfg.Mongo)).(db.PersistentDatabase)
+		persistentDB = db.Must(db.NewMongoDatabase(dbcfg.Mongo, scache)).(db.PersistentDatabase)
 		break
 	case "maria":
 		log.Println("👉 Using MariaDB as backend")
@@ -90,29 +119,13 @@ func main() {
 		break
 	case "bbolt":
 		log.Println("👉 Using BBolt as backend")
-		persistentDB = db.Must(db.NewBBoltDatabase(dbcfg.BBolt)).(db.PersistentDatabase)
+		persistentDB = db.Must(db.NewBBoltDatabase(dbcfg.BBolt, scache)).(db.PersistentDatabase)
 		break
 	case "redis":
-		log.Println("👉 Using Redis as backend")
-		redisDB := db.Must(db.NewRedisDatabase(dbcfg.Redis))
-
-		persistentDB = redisDB.(db.PersistentDatabase)
-		tempDB = redisDB.(db.TemporaryDatabase)
 		break
 	default:
 		log.Fatalln("🚨 Invalid persistentDB backend: '", dbcfg.Backend, "'")
 		return
-	}
-
-	var redisClient *redis.Client = nil
-
-	// Load redis
-	if dbcfg.Redis.Use {
-		log.Println("👉 Using redis as temporary database")
-
-		if tempDB == nil {
-			tempDB = db.Must(db.NewRedisDatabase(dbcfg.Redis)).(db.TemporaryDatabase)
-		}
 	}
 
 	var hb chan bool

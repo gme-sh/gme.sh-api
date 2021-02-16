@@ -3,22 +3,19 @@ package db
 import (
 	"encoding/json"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
-	"time"
-
 	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
-	"github.com/patrickmn/go-cache"
 	"go.etcd.io/bbolt"
 )
 
 // PersistentDatabase
 type bboltDatabase struct {
 	database              *bbolt.DB
-	cache                 *cache.Cache
+	cache                 *SharedCache
 	shortedURLsBucketName []byte
 }
 
 // NewBBoltDatabase -> Create new BBoltDatabase
-func NewBBoltDatabase(cfg *config.BBoltConfig) (bbdb PersistentDatabase, err error) {
+func NewBBoltDatabase(cfg *config.BBoltConfig, cache *SharedCache) (bbdb PersistentDatabase, err error) {
 	// Open file {path} with permission-mode 0666
 	// 0666 = All users can read/write, but cannot execute
 	// 666 = 110 (u) 110 (g) 110 (o)
@@ -27,11 +24,9 @@ func NewBBoltDatabase(cfg *config.BBoltConfig) (bbdb PersistentDatabase, err err
 	if err != nil {
 		return nil, err
 	}
-	// create a cache that holds its objects for 10 minutes and deletes them after 15 minutes
-	c := cache.New(10*time.Minute, 15*time.Minute)
 	bbdb = &bboltDatabase{
 		database:              db,
-		cache:                 c,
+		cache:                 cache,
 		shortedURLsBucketName: []byte(cfg.ShortedURLsBucketName),
 	}
 	return
@@ -61,7 +56,7 @@ func (bdb *bboltDatabase) FindShortenedURL(id *short.ShortID) (res *short.ShortU
 	}
 	err = json.Unmarshal(content, &res)
 	if err == nil {
-		bdb.cache.Set(id.String(), res, cache.DefaultExpiration)
+		err = bdb.cache.UpdateCache(res)
 	}
 	return
 }
@@ -81,7 +76,7 @@ func (bdb *bboltDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 		return
 	})
 	if err == nil {
-		bdb.cache.Set(short.ID.String(), short, cache.DefaultExpiration)
+		err = bdb.cache.UpdateCache(short)
 	}
 	return
 }
@@ -96,14 +91,8 @@ func (bdb *bboltDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
 		return
 	})
 	if err == nil {
-		bdb.cache.Delete(id.String())
+		_, err = bdb.cache.BreakCache(id)
 	}
-	return
-}
-
-func (bdb *bboltDatabase) BreakCache(id *short.ShortID) (found bool) {
-	_, found = bdb.cache.Get(id.String())
-	bdb.cache.Delete(id.String())
 	return
 }
 
@@ -111,6 +100,5 @@ func (bdb *bboltDatabase) ShortURLAvailable(id *short.ShortID) bool {
 	if _, found := bdb.cache.Get(id.String()); found {
 		return false
 	}
-
 	return shortURLAvailable(bdb, id)
 }

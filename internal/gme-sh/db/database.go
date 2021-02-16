@@ -9,7 +9,6 @@ import (
 
 type Database interface {
 	FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error)
-	BreakCache(id *short.ShortID) (found bool)
 	ShortURLAvailable(id *short.ShortID) (available bool)
 }
 
@@ -21,7 +20,6 @@ type PersistentDatabase interface /* implements Database */ {
 
 	// Database Functions
 	FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error)
-	BreakCache(id *short.ShortID) (found bool)
 	ShortURLAvailable(id *short.ShortID) (available bool)
 }
 
@@ -33,9 +31,12 @@ type TemporaryDatabase interface /* implements Database */ {
 	AddStats(id *short.ShortID) (err error)
 	DeleteStats(id *short.ShortID) (err error)
 
+	Publish(channel, msg string) (err error)
+	Subscribe(c func(channel, payload string), channels ...string) (err error)
+	Close() (err error)
+
 	// Database Functions
 	FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error)
-	BreakCache(id *short.ShortID) (found bool)
 	ShortURLAvailable(id *short.ShortID) (available bool)
 }
 

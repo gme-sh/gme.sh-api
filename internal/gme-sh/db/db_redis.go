@@ -16,6 +16,7 @@ import (
 type redisDB struct {
 	client  *redis.Client
 	context context.Context
+	ps      *redis.PubSub
 }
 
 // NewRedisDatabase -> Use Redis as backend
@@ -79,11 +80,6 @@ func (rdb *redisDB) SaveShortenedURLWithExpiration(u *short.ShortURL, e time.Dur
 	return
 }
 
-// We don't need BreakCache for the redis implementation, because redis is fast enough anyways
-func (rdb *redisDB) BreakCache(_ *short.ShortID) (found bool) {
-	return false
-}
-
 func (rdb *redisDB) ShortURLAvailable(id *short.ShortID) bool {
 	return shortURLAvailable(rdb, id)
 }
@@ -144,5 +140,31 @@ func (rdb *redisDB) DeleteStats(id *short.ShortID) (err error) {
 		id.RedisKeyf(short.RedisKeyCountGlobal),
 		id.RedisKeyf(short.RedisKeyCount60),
 	).Err()
+	return
+}
+
+func (rdb *redisDB) Close() (err error) {
+	if rdb.ps == nil {
+		return
+	}
+	err = rdb.ps.Close()
+	return
+}
+
+func (rdb *redisDB) Publish(channel, msg string) (err error) {
+	err = rdb.client.Publish(rdb.context, channel, msg).Err()
+	return
+}
+
+func (rdb *redisDB) Subscribe(c func(channel, payload string), channels ...string) (err error) {
+	rdb.ps = rdb.client.Subscribe(rdb.context, channels...)
+	// wait for confirmation
+	_, err = rdb.ps.Receive(rdb.context)
+	if err != nil {
+		return
+	}
+	for msg := range rdb.ps.Channel() {
+		c(msg.Channel, msg.Payload)
+	}
 	return
 }

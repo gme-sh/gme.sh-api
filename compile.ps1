@@ -1,4 +1,6 @@
-New-Item -Path . -Name "bin" -ItemType "directory" 
+if (-not (Test-Path -Path "./bin")) {
+    New-Item -Path . -Name "bin" -ItemType "directory" 
+}
 Write-Host "Compiling for every OS and Platform"
 Write-Host "🐧 Compile for Linux"
 Set-Variable GOOS=linux 

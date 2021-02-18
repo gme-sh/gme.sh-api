@@ -71,7 +71,7 @@ func (ws *WebServer) handleApiV1Stats(w http.ResponseWriter, r *http.Request) {
 	log.Println("🚀", r.RemoteAddr, "requested to GET stats for", alias)
 
 	// find shorted url
-	if available := ws.PersistentDatabase.ShortURLAvailable(&alias); available {
+	if u, _ := ws.FindShort(&alias); u == nil {
 		log.Println("    🤬 But", alias, "was not found")
 		dieStats(w, "url not found")
 		return

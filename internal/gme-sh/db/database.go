@@ -26,6 +26,7 @@ type PersistentDatabase interface /* implements Database */ {
 type TemporaryDatabase interface /* implements Database */ {
 	// TemporaryDatabase Functions
 	SaveShortenedURLWithExpiration(url *short.ShortURL, expireAfter time.Duration) (err error)
+	DeleteShortenedURL(id *short.ShortID) (err error)
 	Heartbeat() (err error)
 	FindStats(id *short.ShortID) (stats *short.Stats, err error)
 	AddStats(id *short.ShortID) (err error)

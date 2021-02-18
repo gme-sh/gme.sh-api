@@ -109,8 +109,16 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 	log.Println("    ☑️ Preferred alias:", req.PreferredAlias)
 	aliasID := short.ShortID(req.PreferredAlias)
 
+	// Temporary?
+	var temp = false
+	var duration time.Duration
+	if req.ExpireAfterSeconds > 0 {
+		temp = true
+		duration = time.Duration(req.ExpireAfterSeconds) * time.Second
+	}
+
 	// check if alias already exists
-	if available := ws.PersistentDatabase.ShortURLAvailable(&aliasID); !available {
+	if available := ws.ShortAvailable(&aliasID, temp); !available {
 		log.Println("    🤬 But the preferred was already occupied")
 		dieCreate(w, "preferred alias is not available")
 		return
@@ -126,17 +134,31 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 		Secret:       secret.String(),
 	}
 
-	// try to save shorted url
-	if err := ws.PersistentDatabase.SaveShortenedURL(sh); err != nil {
-		log.Println("    🤬 But something went wrong saving")
-		dieCreate(w, err)
-		return
+	if temp {
+		if err := ws.TemporaryDatabase.SaveShortenedURLWithExpiration(sh, duration); err != nil {
+			log.Println("    🤬 But something went wrong saving (temp)")
+			dieCreate(w, err)
+			return
+		}
+	} else {
+		if err := ws.PersistentDatabase.SaveShortenedURL(sh); err != nil {
+			log.Println("    🤬 But something went wrong saving (temp)")
+			dieCreate(w, err)
+			return
+		}
+	}
+
+	message := "success//"
+	if temp {
+		message += "temp"
+	} else {
+		message += "persistent"
 	}
 
 	log.Println("    ✅ Looks like it worked out")
 	dieCreate(w, &createShortURLResponse{
 		Success: true,
-		Message: "success",
+		Message: message,
 		Short:   sh,
 	})
 }

@@ -78,7 +78,7 @@ func (ws *WebServer) handleApiV1Delete(w http.ResponseWriter, r *http.Request) {
 	log.Println("🚀", r.RemoteAddr, "requested to DELETE", id, "with secret", secret)
 
 	// find short url
-	sh, err := ws.PersistentDatabase.FindShortenedURL(&id)
+	sh, err := ws.FindShort(&id)
 	if err != nil {
 		log.Println("    🤬 But", id, "was not found")
 		dieDelete(w, err)
@@ -99,11 +99,12 @@ func (ws *WebServer) handleApiV1Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// delete secret
-	if err = ws.PersistentDatabase.DeleteShortenedURL(&id); err != nil {
-		dieDelete(w, err)
+	p, t := ws.DeleteShort(&id)
+	if p != nil && t != nil {
+		dieDelete(w, p)
 		return
 	}
-	log.Println("    ✅ That shit worked")
+	log.Println("    ✅ That shit (probably) worked")
 
 	dieDelete(w, &deleteShortURLResponse{
 		Success: true,

@@ -23,8 +23,7 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 
 	log.Println("🚀", request.RemoteAddr, "requested to GET redirect to", id)
 
-	// look for redirection
-	url, err := ws.PersistentDatabase.FindShortenedURL(&id)
+	url, err := ws.FindShort(&id)
 	log.Println("url, err :=", url, err)
 	if url == nil || err != nil {
 		log.Println("    🤬 But it was not found:", err)

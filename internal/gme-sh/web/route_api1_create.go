@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -95,6 +96,23 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 		dieCreate(w, err)
 		return
 	}
+
+	// Check for loop
+	u, err := url.Parse(req.FullURL)
+	if err != nil {
+		dieCreate(w, err)
+		return
+	}
+	status, err := getLoopStatus(u)
+	if err != nil {
+		dieCreate(w, err)
+		return
+	}
+	if status == http.StatusLoopDetected {
+		dieCreate(w, "Loop detected")
+		return
+	}
+	//
 
 	/// Generate ID and check if alias already exists
 	if req.PreferredAlias == "" {

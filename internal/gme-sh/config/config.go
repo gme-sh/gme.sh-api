@@ -12,10 +12,15 @@ type DatabaseConfig struct {
 	Maria             *MariaConfig
 }
 
+type WebServerConfig struct {
+	Addr string
+}
+
 // Config --> Config for Database implementations
 type Config struct {
 	DryRedirect bool
 	Database    *DatabaseConfig
+	WebServer   *WebServerConfig
 }
 
 // MongoConfig -> Config for MongoDB implementation

@@ -25,8 +25,9 @@ func (ws *WebServer) Start() {
 	router.HandleFunc("/api/v1/{id}/{secret64}", ws.handleApiV1Delete).Methods("DELETE")
 	router.HandleFunc("/{id}", ws.handleRedirect)
 
-	if err := http.ListenAndServe(":1336", router); err != nil {
-		log.Fatalln("Error listening and serving:", err)
+	log.Println("🌎 Binding", ws.config.WebServer.Addr, "...")
+	if err := http.ListenAndServe(ws.config.WebServer.Addr, router); err != nil {
+		log.Fatalln("    └ ❌ FAILED:", err)
 	}
 }
 

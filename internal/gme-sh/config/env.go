@@ -15,6 +15,11 @@ func FromEnv(cfg *Config) {
 		cfg.DryRedirect = strings.ToLower(val) == "true"
 	}
 
+	// web server
+	if val := os.Getenv("WEB_ADDR"); val != "" {
+		cfg.WebServer.Addr = val
+	}
+
 	config := cfg.Database
 
 	// MongoDB

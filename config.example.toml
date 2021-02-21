@@ -1,7 +1,8 @@
 # Instead of redirection, should only a debug message be displayed to which page would have been redirected?
 DryRedirect = true
 
-BlockedHosts = [
+[BlockedHosts]
+Hosts = [
     "gme.sh"
 ]
 

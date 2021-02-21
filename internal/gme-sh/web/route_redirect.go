@@ -52,5 +52,7 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 				log.Println("    ⏱ Stats could not be stored:", err)
 			}
 		}()
+	} else {
+		log.Println("  📊 Skipped stats for", id.String(), "because url was temporary")
 	}
 }

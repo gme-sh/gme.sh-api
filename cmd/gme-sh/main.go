@@ -61,6 +61,10 @@ func main() {
 		return
 	}
 
+	log.Println("  ├ Dry-Redirect:", cfg.DryRedirect)
+	log.Println("  ├ Web-Addr:", cfg.WebServer.Addr)
+	log.Println("  └ Blocked-Hosts:", cfg.BlockedHosts)
+
 	dbcfg := cfg.Database
 	config.FromEnv(cfg)
 	////

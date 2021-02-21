@@ -20,6 +20,10 @@ func FromEnv(cfg *Config) {
 		cfg.WebServer.Addr = val
 	}
 
+	if val := os.Getenv("BLOCKED_HOSTS"); val != "" {
+		cfg.BlockedHosts = strings.Split(val, ",")
+	}
+
 	config := cfg.Database
 
 	// MongoDB

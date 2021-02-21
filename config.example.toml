@@ -1,6 +1,10 @@
 # Instead of redirection, should only a debug message be displayed to which page would have been redirected?
 DryRedirect = true
 
+BlockedHosts = [
+    "gme.sh"
+]
+
 [WebServer]
     # Address on which the WebServer should listen
     Addr = ":1336"
@@ -8,7 +12,7 @@ DryRedirect = true
 [Database]
     # Here the backend database can be selected from:
     # "Mongo" (MongoDB), "BBolt" (BBolt; embedded database)
-    Backend = "BBolt"
+    Backend = "Mongo"
 
     # Shared cache only makes sense if you want to run multiple backend shards / servers at the same time.
     # If a request is then cached on one server, this cache is passed on to all other servers via PubSub,

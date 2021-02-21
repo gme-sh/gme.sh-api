@@ -18,9 +18,10 @@ type WebServerConfig struct {
 
 // Config --> Config for Database implementations
 type Config struct {
-	DryRedirect bool
-	Database    *DatabaseConfig
-	WebServer   *WebServerConfig
+	DryRedirect  bool
+	BlockedHosts []string
+	Database     *DatabaseConfig
+	WebServer    *WebServerConfig
 }
 
 // MongoConfig -> Config for MongoDB implementation

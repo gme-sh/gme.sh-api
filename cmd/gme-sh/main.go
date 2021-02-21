@@ -12,7 +12,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
-	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db/heartbeat"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/web"
 )
 
@@ -135,7 +134,7 @@ func main() {
 
 	var hb chan bool
 	if tempDB != nil {
-		hb = heartbeat.CreateHeartbeatService(tempDB)
+		hb = db.CreateHeartbeatService(tempDB)
 	} else {
 		hb = make(chan bool, 1)
 	}

@@ -129,7 +129,8 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 
 	// Temporary?
 	var temp = false
-	var duration time.Duration
+	var duration = time.Duration(-1)
+
 	if req.ExpireAfterSeconds > 0 {
 		temp = true
 		duration = time.Duration(req.ExpireAfterSeconds) * time.Second

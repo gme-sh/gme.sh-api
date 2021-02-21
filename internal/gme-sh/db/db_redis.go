@@ -157,6 +157,7 @@ func (rdb *redisDB) Publish(channel, msg string) (err error) {
 }
 
 func (rdb *redisDB) Subscribe(c func(channel, payload string), channels ...string) (err error) {
+	log.Println("[REDIS] (Re-) Subscribing")
 	rdb.ps = rdb.client.Subscribe(rdb.context, channels...)
 	// wait for confirmation
 	_, err = rdb.ps.Receive(rdb.context)
@@ -166,5 +167,6 @@ func (rdb *redisDB) Subscribe(c func(channel, payload string), channels ...strin
 	for msg := range rdb.ps.Channel() {
 		c(msg.Channel, msg.Payload)
 	}
-	return
+	// if this range ends, re-subscribe
+	return rdb.Subscribe(c, channels...)
 }

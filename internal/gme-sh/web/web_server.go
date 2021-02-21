@@ -44,6 +44,7 @@ func (ws *WebServer) FindShort(id *short.ShortID) (url *short.ShortURL, err erro
 	}
 	return
 }
+
 func (ws *WebServer) DeleteShort(id *short.ShortID) (persError error, tempError error) {
 	if ws.TemporaryDatabase != nil {
 		tempError = ws.TemporaryDatabase.DeleteShortenedURL(id)
@@ -51,6 +52,7 @@ func (ws *WebServer) DeleteShort(id *short.ShortID) (persError error, tempError 
 	persError = ws.PersistentDatabase.DeleteShortenedURL(id)
 	return
 }
+
 func (ws *WebServer) ShortAvailable(id *short.ShortID, temp bool) bool {
 	if temp && ws.TemporaryDatabase != nil {
 		return ws.TemporaryDatabase.ShortURLAvailable(id)

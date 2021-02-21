@@ -1,7 +1,6 @@
-package heartbeat
+package db
 
 import (
-	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
 	"log"
 	"sync"
 	"time"
@@ -10,7 +9,7 @@ import (
 var LastHeartbeatError error
 var mu = &sync.Mutex{}
 
-func createTickerAndCheck(tdb db.TemporaryDatabase, c chan bool) {
+func createTickerAndCheck(tdb TemporaryDatabase, c chan bool) {
 	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
@@ -41,7 +40,7 @@ func createTickerAndCheck(tdb db.TemporaryDatabase, c chan bool) {
 	}
 }
 
-func CreateHeartbeatService(tdb db.TemporaryDatabase) chan bool {
+func CreateHeartbeatService(tdb TemporaryDatabase) chan bool {
 	c := make(chan bool, 1)
 	go createTickerAndCheck(tdb, c)
 	return c

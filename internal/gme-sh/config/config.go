@@ -2,7 +2,7 @@ package config
 
 import "os"
 
-// Config --> Config for Database implementations
+// Config -> Config for Database implementations
 type Config struct {
 	DryRedirect  bool          `env:"DRY_REDIRECT"`
 	BlockedHosts *BlockedHosts `env:"BLOCKED_HOSTS"`
@@ -20,6 +20,7 @@ type DatabaseConfig struct {
 	Maria             *MariaConfig
 }
 
+// WebServerConfig -> Config for web.WebServer
 type WebServerConfig struct {
 	Addr string `env:"WEB_ADDR"`
 }

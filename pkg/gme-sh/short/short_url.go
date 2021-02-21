@@ -94,7 +94,7 @@ func (id *ShortID) String() string {
 	return string(*id)
 }
 
-// String converts the ShortID to a byte array (splice)
+// Bytes converts the ShortID to a byte array (splice)
 func (id *ShortID) Bytes() []byte {
 	return []byte(id.String())
 }

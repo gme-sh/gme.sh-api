@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// CreateResponseOK is returned when everything worked fine
 const CreateResponseOK = "success"
 
 type createShortURLPayload struct {

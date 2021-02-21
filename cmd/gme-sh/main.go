@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	// This Banner is displayed when the API is started
+	// Banner is displayed when the API is started
 	Banner = `
                                          /$$                               /$$
                                         | $$                              | $$

@@ -17,6 +17,7 @@ func init() {
 	}
 }
 
+// LoadConfig loads a config if the config exists, otherwise creates a default config
 func LoadConfig() *Config {
 	var cfg *Config
 

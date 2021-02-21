@@ -29,20 +29,28 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 		log.Println("    🤬 But it was not found:", err)
 		b64id := base64.StdEncoding.EncodeToString([]byte(id))
 
-		// TODO: Uncomment this
-		_, _ = fmt.Fprintln(writer, "would redirect to /404/"+b64id, "with code 302 (disabled because debug ding)")
-		// http.Redirect(writer, request, "/404/"+b64id, 302)
+		if ws.config.DryRedirect {
+			_, _ = fmt.Fprintln(writer, "would redirect to /404/"+b64id, "with code 302 (disabled because DryRedirect = True)")
+		} else {
+			http.Redirect(writer, request, "/404/"+b64id, 302)
+		}
+
 		return
 	}
 
-	// TODO: Uncomment this
-	_, _ = fmt.Fprintln(writer, "would redirect to", url.FullURL, "with code 302 (disabled because debug ding)")
-	// http.Redirect(writer, request, url.FullURL, 302)
+	if ws.config.DryRedirect {
+		_, _ = fmt.Fprintln(writer, "would redirect to", url.FullURL, "with code 302 (disabled because DryRedirect = True)")
+	} else {
+		http.Redirect(writer, request, url.FullURL, 302)
+	}
 
 	// add stats async
-	go func() {
-		if err = ws.TemporaryDatabase.AddStats(&id); err != nil {
-			log.Println("    ⏱ Stats could not be stored:", err)
-		}
-	}()
+	if !url.Temporary {
+		log.Println("  📊 Add stats for", id.String())
+		go func() {
+			if err = ws.TemporaryDatabase.AddStats(&id); err != nil {
+				log.Println("    ⏱ Stats could not be stored:", err)
+			}
+		}()
+	}
 }

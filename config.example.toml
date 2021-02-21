@@ -1,0 +1,42 @@
+# Instead of redirection, should only a debug message be displayed to which page would have been redirected?
+DryRedirect = true
+
+[Database]
+# Here the backend database can be selected from:
+# "Mongo" (MongoDB), "BBolt" (BBolt; embedded database)
+Backend = "BBolt"
+
+# Shared cache only makes sense if you want to run multiple backend shards / servers at the same time.
+# If a request is then cached on one server, this cache is passed on to all other servers via PubSub,
+# whereby the requests to the database are brought to a minimum.
+# -> Still very experimental, can lead to errors!
+# Enable only if there are performance problems with the database.
+EnableSharedCache = true
+
+# Persistent Database
+[Database.Mongo]
+ApplyURI = "mongodb://localhost:27017/test?authSource=admin&appname=gme-sh&ssl=true"
+Database = "gme-sh"
+ShortURLCollection = "short-urls"
+
+# Temporary Database
+[Database.Redis]
+Use = true
+Addr = "127.0.0.1:6379"
+Password = ""
+DB = 0
+
+# Persistent Database
+[Database.BBolt]
+Path = "dbgoesbrr.db"
+FileMode = 0666
+ShortedURLsBucketName = "stonks-urls"
+
+# Persistent Database
+# NOT IMPLEMENTED (yet)
+[Database.Maria]
+Addr = "127.0.0.1:3306"
+User = "user"
+Password = "123456"
+DBName = "stonksdb"
+TablePrefix = ""

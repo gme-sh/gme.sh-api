@@ -14,7 +14,8 @@ type DatabaseConfig struct {
 
 // Config --> Config for Database implementations
 type Config struct {
-	Database *DatabaseConfig
+	DryRedirect bool
+	Database    *DatabaseConfig
 }
 
 // MongoConfig -> Config for MongoDB implementation

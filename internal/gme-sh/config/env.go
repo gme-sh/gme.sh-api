@@ -9,7 +9,14 @@ import (
 
 // FromEnv -> Please correct this function
 // taken from r/programminghorror
-func FromEnv(config *DatabaseConfig) {
+func FromEnv(cfg *Config) {
+	// def
+	if val := os.Getenv("DRY_REDIRECT"); val != "" {
+		cfg.DryRedirect = strings.ToLower(val) == "true"
+	}
+
+	config := cfg.Database
+
 	// MongoDB
 	if mdbap := os.Getenv("MONGODB_APPLYURI"); mdbap != "" {
 		config.Mongo.ApplyURI = mdbap

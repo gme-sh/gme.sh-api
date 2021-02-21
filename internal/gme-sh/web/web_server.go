@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
 	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	"github.com/gorilla/mux"
@@ -11,6 +12,7 @@ import (
 type WebServer struct {
 	db.PersistentDatabase
 	db.TemporaryDatabase
+	config *config.Config
 }
 
 func (ws *WebServer) Start() {
@@ -28,10 +30,11 @@ func (ws *WebServer) Start() {
 	}
 }
 
-func NewWebServer(persistent db.PersistentDatabase, temporary db.TemporaryDatabase) *WebServer {
+func NewWebServer(persistent db.PersistentDatabase, temporary db.TemporaryDatabase, cfg *config.Config) *WebServer {
 	return &WebServer{
 		persistent,
 		temporary,
+		cfg,
 	}
 }
 

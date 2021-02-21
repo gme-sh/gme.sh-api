@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -61,13 +60,9 @@ func main() {
 		log.Fatalln("Error decoding file:", err)
 		return
 	}
+
 	dbcfg := cfg.Database
-	if s, err := json.Marshal(dbcfg); err != nil {
-		log.Println("ERROR marshalling config:", err)
-	} else {
-		log.Println("config:", string(s))
-	}
-	config.FromEnv(dbcfg)
+	config.FromEnv(cfg)
 	////
 
 	//// Database
@@ -141,7 +136,7 @@ func main() {
 	////
 
 	//// Web-Server
-	server := web.NewWebServer(persistentDB, tempDB)
+	server := web.NewWebServer(persistentDB, tempDB, cfg)
 	go server.Start()
 	////
 

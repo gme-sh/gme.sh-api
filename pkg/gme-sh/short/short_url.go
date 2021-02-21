@@ -15,6 +15,7 @@ type ShortURL struct {
 	FullURL      string    `json:"full_url" bson:"full_url"`
 	CreationDate time.Time `json:"creation_date" bson:"creation_date"`
 	Secret       string    `json:"secret" bson:"secret"`
+	Temporary    bool      `json:"temporary" bson:"is_temp"`
 }
 
 ///////////////////////////////////////////////////////////////////////

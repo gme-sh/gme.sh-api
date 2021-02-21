@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// LastHeartbeatError contains the last thrown error of the backend (TemporaryDatabase).
+// If everything is running, this variable should be nil
 var LastHeartbeatError error
 var mu = &sync.Mutex{}
 
@@ -40,6 +42,7 @@ func createTickerAndCheck(tdb TemporaryDatabase, c chan bool) {
 	}
 }
 
+// CreateHeartbeatService x starts the Heartbeat service and creates a channel to end the service by sending true
 func CreateHeartbeatService(tdb TemporaryDatabase) chan bool {
 	c := make(chan bool, 1)
 	go createTickerAndCheck(tdb, c)

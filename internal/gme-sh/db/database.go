@@ -7,13 +7,14 @@ import (
 	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 )
 
+// Database functions to find short.ShortURL's
 type Database interface {
 	FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error)
 	ShortURLAvailable(id *short.ShortID) (available bool)
 }
 
-// PersistentDatabase -> PersistentDatabase Interface
-type PersistentDatabase interface /* implements Database */ {
+// PersistentDatabase functions
+type PersistentDatabase interface {
 	// PersistentDatabase Functions
 	SaveShortenedURL(url *short.ShortURL) (err error)
 	DeleteShortenedURL(id *short.ShortID) (err error)
@@ -23,7 +24,8 @@ type PersistentDatabase interface /* implements Database */ {
 	ShortURLAvailable(id *short.ShortID) (available bool)
 }
 
-type TemporaryDatabase interface /* implements Database */ {
+// TemporaryDatabase functions
+type TemporaryDatabase interface {
 	// TemporaryDatabase Functions
 	SaveShortenedURLWithExpiration(url *short.ShortURL, expireAfter time.Duration) (err error)
 	DeleteShortenedURL(id *short.ShortID) (err error)

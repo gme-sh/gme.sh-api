@@ -8,13 +8,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/BurntSushi/toml"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/web"
 )
 
 const (
+	// This Banner is displayed when the API is started
 	Banner = `
                                          /$$                               /$$
                                         | $$                              | $$
@@ -24,19 +24,10 @@ const (
 ██║   ██║██║╚██╔╝██║██╔══╝    \____  $$ | $$  | $$ | $$  | $$ | $$         | $$ /$$
 ╚██████╔╝██║ ╚═╝ ██║███████╗  /$$$$$$$/ | $$  | $$ |  $$$$$$/ | $$         |  $$$$/
  ╚═════╝ ╚═╝     ╚═╝╚══════╝ |_______/  |__/  |__/  \______/  |__/          \____/`
+
+	// Version of the backend
 	Version = "1.0.0-alpha" // semantic
 )
-
-var (
-	// ConfigPath is "config.toml" by default
-	ConfigPath = "config.toml"
-)
-
-func init() {
-	if val := os.Getenv("CONFIG_PATH"); val != "" {
-		ConfigPath = val
-	}
-}
 
 func main() {
 	fmt.Println(Banner)
@@ -45,34 +36,11 @@ func main() {
 
 	//// Config
 	log.Println("└ Loading config")
-	var cfg *config.Config
-	// check if config file exists
-	// if not, create a default config
-	if _, err := os.Stat(ConfigPath); os.IsNotExist(err) {
-		log.Println("└   Creating default config")
-		if err := config.CreateDefault(); err != nil {
-			log.Fatalln("Error creating config:", err)
-			return
-		}
-	}
-	// decode config from file "config.toml"
-	if _, err := toml.DecodeFile(ConfigPath, &cfg); err != nil {
-		log.Fatalln("Error decoding file:", err)
+	cfg := config.LoadConfig()
+	if cfg == nil {
 		return
 	}
-
-	log.Println("  ├ Dry-Redirect:", cfg.DryRedirect)
-	log.Println("  ├ Web-Addr:", cfg.WebServer.Addr)
-	log.Println("  └ Blocked-Hosts:", cfg.BlockedHosts)
-
 	dbcfg := cfg.Database
-	errs := config.FromEnv(cfg)
-	for i, e := range errs {
-		if e != nil {
-			log.Fatalln("ERROR #", i, "loading config from env:", e)
-			return
-		}
-	}
 	////
 
 	//// Database

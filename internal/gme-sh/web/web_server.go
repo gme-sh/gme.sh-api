@@ -9,12 +9,14 @@ import (
 	"net/http"
 )
 
+// WebServer struct that holds databases and configs
 type WebServer struct {
 	db.PersistentDatabase
 	db.TemporaryDatabase
 	config *config.Config
 }
 
+// Start starts the WebServer and listens on the specified port
 func (ws *WebServer) Start() {
 	router := mux.NewRouter()
 
@@ -48,6 +50,7 @@ func (ws *WebServer) Start() {
 	}
 }
 
+// NewWebServer returns a new WebServer object (reference)
 func NewWebServer(persistent db.PersistentDatabase, temporary db.TemporaryDatabase, cfg *config.Config) *WebServer {
 	return &WebServer{
 		persistent,
@@ -56,6 +59,7 @@ func NewWebServer(persistent db.PersistentDatabase, temporary db.TemporaryDataba
 	}
 }
 
+// FindShort returns a short.ShortURL from a db.TemporaryDatabase or db.PersistentDatabase
 func (ws *WebServer) FindShort(id *short.ShortID) (url *short.ShortURL, err error) {
 	if ws.TemporaryDatabase != nil {
 		url, err = ws.TemporaryDatabase.FindShortenedURL(id)
@@ -66,6 +70,7 @@ func (ws *WebServer) FindShort(id *short.ShortID) (url *short.ShortURL, err erro
 	return
 }
 
+// FindShort deletes a short.ShortURL from a db.TemporaryDatabase or db.PersistentDatabase
 func (ws *WebServer) DeleteShort(id *short.ShortID) (persError error, tempError error) {
 	if ws.TemporaryDatabase != nil {
 		tempError = ws.TemporaryDatabase.DeleteShortenedURL(id)
@@ -74,10 +79,10 @@ func (ws *WebServer) DeleteShort(id *short.ShortID) (persError error, tempError 
 	return
 }
 
+// FindShort returns whether a short.ShortURL is available from db.TemporaryDatabase or db.PersistentDatabase
 func (ws *WebServer) ShortAvailable(id *short.ShortID, temp bool) bool {
 	if temp && ws.TemporaryDatabase != nil {
 		return ws.TemporaryDatabase.ShortURLAvailable(id)
-	} else {
-		return ws.PersistentDatabase.ShortURLAvailable(id)
 	}
+	return ws.PersistentDatabase.ShortURLAvailable(id)
 }

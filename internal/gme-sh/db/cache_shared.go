@@ -9,16 +9,23 @@ import (
 )
 
 const (
-	SCacheChannelBreak  = "gme.sh-scache:break"
+	// SCacheChannelBreak -> Channel to subscribe for cache break notifications
+	SCacheChannelBreak = "gme.sh-scache:break"
+
+	// SCacheChannelUpdate -> Channel to subscribe for cache update notifications
 	SCacheChannelUpdate = "gme.sh-scache:update"
 )
 
+// SharedCache only makes sense if you want to run multiple backend shards / servers at the same time.
+// If a request is then cached on one server, this cache is passed on to all other servers via PubSub,
+// whereby the requests to the database are brought to a minimum.
 type SharedCache struct {
 	NodeID string
 	tempDB TemporaryDatabase
 	local  *LocalCache
 }
 
+// NewSharedCache creates a new SharedCache object and returns it
 func NewSharedCache(tempDB TemporaryDatabase) *SharedCache {
 	return &SharedCache{
 		NodeID: string(short.GenerateID(6, short.AlwaysTrue, 0)),
@@ -27,6 +34,7 @@ func NewSharedCache(tempDB TemporaryDatabase) *SharedCache {
 	}
 }
 
+// UpdateCache adds a new ShortURL object to the cache.
 func (s *SharedCache) UpdateCache(u *short.ShortURL) (err error) {
 	err = s.local.UpdateCache(u)
 	if err != nil {
@@ -37,6 +45,9 @@ func (s *SharedCache) UpdateCache(u *short.ShortURL) (err error) {
 	return
 }
 
+// BreakCache removes the ShortURL object from the cache that matches the ShortID.
+// No further check is made whether it was already in the cache or not.
+// returns an error if there was an error publishing the break notification
 func (s *SharedCache) BreakCache(id *short.ShortID) (err error) {
 	// since the BreakCache from LocalCache always returns nil,
 	// we don't have to deal with any exception here
@@ -47,6 +58,9 @@ func (s *SharedCache) BreakCache(id *short.ShortID) (err error) {
 	return
 }
 
+// Get returns an interface from the cache if it exists.
+// Otherwise the interface is nil and the return value is false.
+// Alias for LocalCache.Get()
 func (s *SharedCache) Get(key string) (interface{}, bool) {
 	return s.local.Get(key)
 }
@@ -86,6 +100,7 @@ func (s *SharedCache) createSCacheBreakPayload(i *short.ShortID) (string, string
 	return SCacheChannelBreak, fmt.Sprintf("%s %s", s.NodeID, i.String())
 }
 
+// Subscribe subscribes to SCacheChannelBreak + SCacheChannelUpdate channels and processes their messages
 func (s *SharedCache) Subscribe() (err error) {
 	err = s.tempDB.Subscribe(func(channel, payload string) {
 		switch channel {

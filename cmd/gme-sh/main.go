@@ -66,7 +66,13 @@ func main() {
 	log.Println("  └ Blocked-Hosts:", cfg.BlockedHosts)
 
 	dbcfg := cfg.Database
-	config.FromEnv(cfg)
+	errs := config.FromEnv(cfg)
+	for i, e := range errs {
+		if e != nil {
+			log.Fatalln("ERROR #", i, "loading config from env:", e)
+			return
+		}
+	}
 	////
 
 	//// Database

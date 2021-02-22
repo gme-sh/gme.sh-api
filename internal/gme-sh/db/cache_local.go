@@ -39,3 +39,19 @@ func (l *LocalCache) BreakCache(id *short.ShortID) (_ error) {
 func (l *LocalCache) Get(key string) (interface{}, bool) {
 	return l.Cache.Get(key)
 }
+
+func (l *LocalCache) GetShortURL(id *short.ShortID) *short.ShortURL {
+	i, found := l.Cache.Get(id.String())
+	if !found {
+		return nil
+	}
+	u, ok := i.(*short.ShortURL)
+	if !ok {
+		return nil
+	}
+	if u.IsExpired() {
+		_ = l.BreakCache(id)
+		return nil
+	}
+	return u
+}

@@ -3,7 +3,6 @@ package web
 import (
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
-	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -12,7 +11,7 @@ import (
 // WebServer struct that holds databases and configs
 type WebServer struct {
 	db.PersistentDatabase
-	db.TemporaryDatabase
+	db.StatsDatabase
 	config *config.Config
 }
 
@@ -51,38 +50,10 @@ func (ws *WebServer) Start() {
 }
 
 // NewWebServer returns a new WebServer object (reference)
-func NewWebServer(persistent db.PersistentDatabase, temporary db.TemporaryDatabase, cfg *config.Config) *WebServer {
+func NewWebServer(persistent db.PersistentDatabase, temporary db.StatsDatabase, cfg *config.Config) *WebServer {
 	return &WebServer{
 		persistent,
 		temporary,
 		cfg,
 	}
-}
-
-// FindShort returns a short.ShortURL from a db.TemporaryDatabase or db.PersistentDatabase
-func (ws *WebServer) FindShort(id *short.ShortID) (url *short.ShortURL, err error) {
-	if ws.TemporaryDatabase != nil {
-		url, err = ws.TemporaryDatabase.FindShortenedURL(id)
-	}
-	if url == nil || err != nil {
-		url, err = ws.PersistentDatabase.FindShortenedURL(id)
-	}
-	return
-}
-
-// DeleteShort deletes a short.ShortURL from a db.TemporaryDatabase or db.PersistentDatabase
-func (ws *WebServer) DeleteShort(id *short.ShortID) (persError error, tempError error) {
-	if ws.TemporaryDatabase != nil {
-		tempError = ws.TemporaryDatabase.DeleteShortenedURL(id)
-	}
-	persError = ws.PersistentDatabase.DeleteShortenedURL(id)
-	return
-}
-
-// ShortAvailable returns whether a short.ShortURL is available from db.TemporaryDatabase or db.PersistentDatabase
-func (ws *WebServer) ShortAvailable(id *short.ShortID, temp bool) bool {
-	if temp && ws.TemporaryDatabase != nil {
-		return ws.TemporaryDatabase.ShortURLAvailable(id)
-	}
-	return ws.PersistentDatabase.ShortURLAvailable(id)
 }

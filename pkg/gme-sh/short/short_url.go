@@ -12,11 +12,11 @@ type ShortID string
 
 // ShortURL -> Structure for shortened urls
 type ShortURL struct {
-	ID           ShortID   `json:"id" bson:"id"`
-	FullURL      string    `json:"full_url" bson:"full_url"`
-	CreationDate time.Time `json:"creation_date" bson:"creation_date"`
-	Secret       string    `json:"secret" bson:"secret"`
-	Temporary    bool      `json:"temporary" bson:"is_temp"`
+	ID             ShortID    `json:"id" bson:"id"`
+	FullURL        string     `json:"full_url" bson:"full_url"`
+	CreationDate   time.Time  `json:"creation_date" bson:"creation_date"`
+	ExpirationDate *time.Time `json:"expiration_date" bson:"expiration_date"`
+	Secret         string     `json:"secret" bson:"secret"`
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -33,6 +33,14 @@ func (id *ShortID) BsonFilter() bson.M {
 	return bson.M{
 		"id": id.String(),
 	}
+}
+
+func (u *ShortURL) IsExpired() bool {
+	return u.IsTemporary() && time.Now().After(*u.ExpirationDate)
+}
+
+func (u *ShortURL) IsTemporary() bool {
+	return u.ExpirationDate != nil
 }
 
 ///////////////////////////////////////////////////////////////////////

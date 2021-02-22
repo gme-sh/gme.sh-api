@@ -1,5 +1,3 @@
-package db
-
 import (
 	"database/sql"
 	"errors"
@@ -14,11 +12,11 @@ import (
 // PersistentDatabase
 type mariaDB struct {
 	db    *sql.DB
-	cache DBCache
+	cache db2.DBCache
 }
 
 // NewMariaDB -> Create a new MariaDB connection
-func NewMariaDB(cfg *config.MariaConfig, cache DBCache) (PersistentDatabase, error) {
+func NewMariaDB(cfg *config.MariaConfig, cache db2.DBCache) (db2.PersistentDatabase, error) {
 	conn := fmt.Sprintf("%s:%s@%s", cfg.User, cfg.Password, cfg.DBName)
 	database, err := sql.Open("mysql", conn)
 	if err != nil {
@@ -53,5 +51,5 @@ func (sql *mariaDB) DeleteShortenedURL(_ *short.ShortID) (err error) {
 }
 
 func (sql *mariaDB) ShortURLAvailable(id *short.ShortID) bool {
-	return shortURLAvailable(sql, id)
+	return db2.shortURLAvailable(sql, id)
 }

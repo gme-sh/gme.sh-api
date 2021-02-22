@@ -12,15 +12,14 @@ import (
 )
 
 // PersistentDatabase
-// TemporaryDatabase
+// StatsDatabase
 type redisDB struct {
 	client  *redis.Client
 	context context.Context
 	ps      *redis.PubSub
 }
 
-// NewRedisDatabase -> Use Redis as backend
-func NewRedisDatabase(cfg *config.RedisConfig) (Database, error) {
+func newRedisDB(cfg *config.RedisConfig) (*redisDB, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     cfg.Addr,
 		Password: cfg.Password,
@@ -37,6 +36,19 @@ func NewRedisDatabase(cfg *config.RedisConfig) (Database, error) {
 		client:  client,
 		context: ctx,
 	}, nil
+}
+
+// NewRedisDatabase -> Use Redis as backend
+func NewRedisDatabase(cfg *config.RedisConfig) (PersistentDatabase, error) {
+	return newRedisDB(cfg)
+}
+
+func NewRedisPubSub(cfg *config.RedisConfig) (PubSub, error) {
+	return newRedisDB(cfg)
+}
+
+func NewRedisStats(cfg *config.RedisConfig) (StatsDatabase, error) {
+	return newRedisDB(cfg)
 }
 
 /*
@@ -70,30 +82,15 @@ func (rdb *redisDB) DeleteShortenedURL(id *short.ShortID) (err error) {
 	return
 }
 
-func (rdb *redisDB) SaveShortenedURLWithExpiration(u *short.ShortURL, e time.Duration) (err error) {
-	var data []byte
-	data, err = json.Marshal(u)
-	if err != nil {
-		return
-	}
-	err = rdb.client.Set(rdb.context, u.ID.RedisKey(), string(data), e).Err()
-	return
-}
-
 func (rdb *redisDB) ShortURLAvailable(id *short.ShortID) bool {
 	return shortURLAvailable(rdb, id)
 }
 
 /*
  * ==================================================================================================
- *                            T E M P O R A R Y  D A T A B A S E
+ *                            S T A T S   D A T A B A S E
  * ==================================================================================================
  */
-
-func (rdb *redisDB) Heartbeat() (err error) {
-	err = rdb.client.Set(rdb.context, "heartbeat", 1, 1*time.Second).Err()
-	return
-}
 
 func (rdb *redisDB) FindStats(id *short.ShortID) (stats *short.Stats, err error) {
 	var calls, calls60 uint64
@@ -140,6 +137,17 @@ func (rdb *redisDB) DeleteStats(id *short.ShortID) (err error) {
 		id.RedisKeyf(short.RedisKeyCountGlobal),
 		id.RedisKeyf(short.RedisKeyCount60),
 	).Err()
+	return
+}
+
+/*
+ * ==================================================================================================
+ *                                       P U B S U B
+ * ==================================================================================================
+ */
+
+func (rdb *redisDB) Heartbeat() (err error) {
+	err = rdb.client.Set(rdb.context, "heartbeat", 1, 1*time.Second).Err()
 	return
 }
 

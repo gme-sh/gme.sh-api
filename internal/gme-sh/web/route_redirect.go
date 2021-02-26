@@ -38,6 +38,24 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
+	// check if url is expired
+	if url.IsExpired() {
+		log.Println("    🤬 But it was expired")
+		b64id := base64.StdEncoding.EncodeToString([]byte(id))
+
+		// remove from database
+		err := ws.PersistentDatabase.DeleteShortenedURL(&id)
+
+		// serialize error
+		e64 := ""
+		if err != nil {
+			e64 = base64.StdEncoding.EncodeToString([]byte(err.Error()))
+		}
+
+		http.Redirect(writer, request, "/expired/"+b64id+"?err="+e64, 302)
+		return
+	}
+
 	if ws.config.DryRedirect {
 		_, _ = fmt.Fprintln(writer, "would redirect to", url.FullURL, "with code 302 (disabled because DryRedirect = True)")
 	} else {

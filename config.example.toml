@@ -6,6 +6,11 @@ Hosts = [
     "gme.sh"
 ]
 
+[Backends]
+    PersistentBackend = "Mongo"
+    StatsBackend = "Redis"
+    PubSubBackend = "Redis"
+
 [WebServer]
     # Address on which the WebServer should listen
     Addr = ":1336"

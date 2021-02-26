@@ -112,22 +112,13 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 	}
 	//
 
+	checkedAvailability := false
+
 	/// Generate ID and check if alias already exists
 	if req.PreferredAlias == "" {
-		if generated := short.GenerateShortID(func(id *short.ShortID) bool {
-			if ws.TemporaryDatabase != nil {
-				if !ws.TemporaryDatabase.ShortURLAvailable(id) {
-					return false
-				}
-			}
-			if ws.PersistentDatabase != nil {
-				if !ws.PersistentDatabase.ShortURLAvailable(id) {
-					return false
-				}
-			}
-			return true
-		}); generated != "" {
+		if generated := short.GenerateShortID(ws.PersistentDatabase.ShortURLAvailable); generated != "" {
 			req.PreferredAlias = generated.String()
+			checkedAvailability = true
 		} else {
 			log.Println("    └ 🤬 But all tried aliases were already occupied")
 			dieCreate(w, "generated id not available")
@@ -135,49 +126,41 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Println("    └ 👉 Preferred alias:", req.PreferredAlias)
+
+	// ShortURL Info
 	aliasID := short.ShortID(req.PreferredAlias)
-
-	// Temporary?
-	var temp = false
-	var duration = time.Duration(-1)
-
-	if req.ExpireAfterSeconds > 0 {
-		temp = true
-		duration = time.Duration(req.ExpireAfterSeconds) * time.Second
-	}
+	duration := time.Duration(req.ExpireAfterSeconds) * time.Second
 
 	// check if alias already exists
-	if available := ws.ShortAvailable(&aliasID, temp); !available {
-		log.Println("    └ 🤬 But the preferred was already occupied")
-		dieCreate(w, "preferred alias is not available")
-		return
+	if !checkedAvailability {
+		if available := ws.PersistentDatabase.ShortURLAvailable(&aliasID); !available {
+			log.Println("    └ 🤬 But the preferred was already occupied")
+			dieCreate(w, "preferred alias is not available")
+			return
+		}
 	}
 	///
+
+	var expiration *time.Time
+	if duration > 0 {
+		v := time.Now().Add(duration)
+		expiration = &v
+	}
 
 	// create short id
 	secret := short.GenerateID(32, short.AlwaysTrue, 0)
 	sh := &short.ShortURL{
-		ID:           short.ShortID(req.PreferredAlias),
-		FullURL:      req.FullURL,
-		CreationDate: time.Now(),
-		Secret:       secret.String(),
-		Temporary:    temp,
+		ID:             short.ShortID(req.PreferredAlias),
+		FullURL:        req.FullURL,
+		CreationDate:   time.Now(),
+		ExpirationDate: expiration,
+		Secret:         secret.String(),
 	}
 
-	if temp {
-		if err := ws.TemporaryDatabase.SaveShortenedURLWithExpiration(sh, duration); err != nil {
-			log.Println("    └ 🤬 But something went wrong saving (temp):", err)
-			dieCreate(w, err)
-			return
-		}
-		log.Println("saved to temporary")
-	} else {
-		if err := ws.PersistentDatabase.SaveShortenedURL(sh); err != nil {
-			log.Println("    └ 🤬 But something went wrong saving (persistent):", err)
-			dieCreate(w, err)
-			return
-		}
-		log.Println("saved to persistent")
+	if err := ws.PersistentDatabase.SaveShortenedURL(sh); err != nil {
+		log.Println("    └ 🤬 But something went wrong saving (persistent):", err)
+		dieCreate(w, err)
+		return
 	}
 
 	log.Println("    └ 💚 Looks like it worked out")

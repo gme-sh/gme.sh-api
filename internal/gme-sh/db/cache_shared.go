@@ -21,15 +21,15 @@ const (
 // whereby the requests to the database are brought to a minimum.
 type SharedCache struct {
 	NodeID string
-	tempDB TemporaryDatabase
+	pubSub PubSub
 	local  *LocalCache
 }
 
 // NewSharedCache creates a new SharedCache object and returns it
-func NewSharedCache(tempDB TemporaryDatabase) *SharedCache {
+func NewSharedCache(pubSub PubSub) *SharedCache {
 	return &SharedCache{
 		NodeID: string(short.GenerateID(6, short.AlwaysTrue, 0)),
-		tempDB: tempDB,
+		pubSub: pubSub,
 		local:  NewLocalCache(),
 	}
 }
@@ -41,7 +41,7 @@ func (s *SharedCache) UpdateCache(u *short.ShortURL) (err error) {
 		return
 	}
 	log.Println("Publishing update for #", u.ID.String(), "...")
-	err = s.tempDB.Publish(s.createSCacheUpdatePayload(u))
+	err = s.pubSub.Publish(s.createSCacheUpdatePayload(u))
 	return
 }
 
@@ -54,8 +54,27 @@ func (s *SharedCache) BreakCache(id *short.ShortID) (err error) {
 	err = s.local.BreakCache(id)
 
 	log.Println("Publishing break for #", id.String(), "...")
-	err = s.tempDB.Publish(s.createSCacheBreakPayload(id))
+	err = s.pubSub.Publish(s.createSCacheBreakPayload(id))
 	return
+}
+
+func (s *SharedCache) GetShortURL(id *short.ShortID) *short.ShortURL {
+	i, found := s.local.Get(id.String())
+	if !found {
+		log.Println("GetShortURL: not found")
+		return nil
+	}
+	u, ok := i.(*short.ShortURL)
+	if !ok {
+		log.Println("GetShortURL: not valid cast")
+		return nil
+	}
+	if u.IsExpired() {
+		log.Println("GetShortURL: is expired")
+		_ = s.BreakCache(id)
+		u = nil
+	}
+	return u
 }
 
 // Get returns an interface from the cache if it exists.
@@ -102,7 +121,7 @@ func (s *SharedCache) createSCacheBreakPayload(i *short.ShortID) (string, string
 
 // Subscribe subscribes to SCacheChannelBreak + SCacheChannelUpdate channels and processes their messages
 func (s *SharedCache) Subscribe() (err error) {
-	err = s.tempDB.Subscribe(func(channel, payload string) {
+	err = s.pubSub.Subscribe(func(channel, payload string) {
 		switch channel {
 		case SCacheChannelUpdate:
 			// publish gme.sh-scache:update <nodeid> <json>

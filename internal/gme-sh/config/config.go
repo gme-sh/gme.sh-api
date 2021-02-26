@@ -6,18 +6,24 @@ import "os"
 type Config struct {
 	DryRedirect  bool          `env:"DRY_REDIRECT"`
 	BlockedHosts *BlockedHosts `env:"BLOCKED_HOSTS"`
+	Backends     *BackendConfig
 	Database     *DatabaseConfig
 	WebServer    *WebServerConfig
 }
 
+type BackendConfig struct {
+	PersistentBackend string `env:"PERSISTENT_BACKEND"`
+	StatsBackend      string `env:"STATS_BACKEND"`
+	PubSubBackend     string `env:"PUBSUB_BACKEND"`
+	CacheBackend      string `env:"CACHE_BACKEND"`
+}
+
 // DatabaseConfig -> Config for PersistentDatabase implementations
 type DatabaseConfig struct {
-	Backend           string `env:"DB_BACKEND"`
-	EnableSharedCache bool   `env:"ENABLE_SHARED_CACHE"`
-	Mongo             *MongoConfig
-	Redis             *RedisConfig
-	BBolt             *BBoltConfig
-	Maria             *MariaConfig
+	Mongo *MongoConfig
+	Redis *RedisConfig
+	BBolt *BBoltConfig
+	Maria *MariaConfig
 }
 
 // WebServerConfig -> Config for web.WebServer
@@ -34,7 +40,6 @@ type MongoConfig struct {
 
 // RedisConfig -> Config for Redis implementation
 type RedisConfig struct {
-	Use      bool   `env:"REDIS_USE"`
 	Addr     string `env:"REDIS_ADDR"`
 	Password string `env:"REDIS_PASS"`
 	DB       int    `env:"REDIS_DATABASE"`

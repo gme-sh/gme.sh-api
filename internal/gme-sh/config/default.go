@@ -12,16 +12,23 @@ func CreateDefault() (err error) {
 	var buf bytes.Buffer
 	e := toml.NewEncoder(&buf)
 	err = e.Encode(Config{
+		DryRedirect: false,
+		BlockedHosts: &BlockedHosts{
+			Hosts: []string{"gme.sh"},
+		},
+		Backends: &BackendConfig{
+			PersistentBackend: "Mongo",
+			StatsBackend:      "Redis",
+			PubSubBackend:     "Redis",
+			CacheBackend:      "Shared",
+		},
 		Database: &DatabaseConfig{
-			Backend:           "mongo",
-			EnableSharedCache: true,
 			Mongo: &MongoConfig{
 				ApplyURI:           "mongodb://localhost:27017",
 				Database:           "stonksdb",
 				ShortURLCollection: "stonks-url-collection",
 			},
 			Redis: &RedisConfig{
-				Use:      true,
 				Addr:     "localhost",
 				Password: "",
 				DB:       0,
@@ -39,6 +46,7 @@ func CreateDefault() (err error) {
 				TablePrefix: "stonks_",
 			},
 		},
+		WebServer: nil,
 	})
 	if err != nil {
 		log.Fatalln("Error encoding default config:", err)

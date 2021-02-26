@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-// LastHeartbeatError contains the last thrown error of the backend (TemporaryDatabase).
+// LastHeartbeatError contains the last thrown error of the backend (StatsDatabase).
 // If everything is running, this variable should be nil
 var LastHeartbeatError error
 var mu = &sync.Mutex{}
 
-func createTickerAndCheck(tdb TemporaryDatabase, c chan bool) {
+func createTickerAndCheck(tdb PubSub, c chan bool) {
 	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
@@ -43,7 +43,7 @@ func createTickerAndCheck(tdb TemporaryDatabase, c chan bool) {
 }
 
 // CreateHeartbeatService x starts the Heartbeat service and creates a channel to end the service by sending true
-func CreateHeartbeatService(tdb TemporaryDatabase) chan bool {
+func CreateHeartbeatService(tdb PubSub) chan bool {
 	c := make(chan bool, 1)
 	go createTickerAndCheck(tdb, c)
 	return c

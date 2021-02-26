@@ -5,6 +5,7 @@ import (
 	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
 	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
 	"go.etcd.io/bbolt"
+	"log"
 )
 
 // PersistentDatabase
@@ -39,9 +40,11 @@ func NewBBoltDatabase(cfg *config.BBoltConfig, cache DBCache) (bbdb PersistentDa
  */
 
 func (bdb *bboltDatabase) FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error) {
-	if o, found := bdb.cache.Get(id.String()); found {
-		return o.(*short.ShortURL), nil
+	// check cache
+	if u := bdb.cache.GetShortURL(id); u != nil {
+		return u, nil
 	}
+	// load from bbolt
 	var content []byte
 	err = bdb.database.View(func(tx *bbolt.Tx) (err error) {
 		var bucket *bbolt.Bucket
@@ -49,15 +52,18 @@ func (bdb *bboltDatabase) FindShortenedURL(id *short.ShortID) (res *short.ShortU
 			return
 		}
 		content = bucket.Get(id.Bytes())
+		log.Println("BBolt :: Content =", string(content))
 		return
 	})
 	if err != nil {
 		return
 	}
+
 	err = json.Unmarshal(content, &res)
 	if err == nil {
 		err = bdb.cache.UpdateCache(res)
 	}
+
 	return
 }
 
@@ -97,7 +103,7 @@ func (bdb *bboltDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
 }
 
 func (bdb *bboltDatabase) ShortURLAvailable(id *short.ShortID) bool {
-	if _, found := bdb.cache.Get(id.String()); found {
+	if u := bdb.cache.GetShortURL(id); u != nil {
 		return false
 	}
 	return shortURLAvailable(bdb, id)

@@ -23,7 +23,7 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 
 	log.Println("🚀", request.RemoteAddr, "requested to GET redirect to", id)
 
-	url, err := ws.FindShort(&id)
+	url, err := ws.PersistentDatabase.FindShortenedURL(&id)
 	log.Println("url, err :=", url, err)
 	if url == nil || err != nil {
 		log.Println("    🤬 But it was not found:", err)
@@ -38,6 +38,24 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
+	// check if url is expired
+	if url.IsExpired() {
+		log.Println("    🤬 But it was expired")
+		b64id := base64.StdEncoding.EncodeToString([]byte(id))
+
+		// remove from database
+		err := ws.PersistentDatabase.DeleteShortenedURL(&id)
+
+		// serialize error
+		e64 := ""
+		if err != nil {
+			e64 = base64.StdEncoding.EncodeToString([]byte(err.Error()))
+		}
+
+		http.Redirect(writer, request, "/expired/"+b64id+"?err="+e64, 302)
+		return
+	}
+
 	if ws.config.DryRedirect {
 		_, _ = fmt.Fprintln(writer, "would redirect to", url.FullURL, "with code 302 (disabled because DryRedirect = True)")
 	} else {
@@ -45,10 +63,10 @@ func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Re
 	}
 
 	// add stats async
-	if !url.Temporary {
+	if !url.IsTemporary() {
 		log.Println("  📊 Add stats for", id.String())
 		go func() {
-			if err = ws.TemporaryDatabase.AddStats(&id); err != nil {
+			if err = ws.StatsDatabase.AddStats(&id); err != nil {
 				log.Println("    ⏱ Stats could not be stored:", err)
 			}
 		}()

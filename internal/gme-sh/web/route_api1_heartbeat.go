@@ -2,7 +2,7 @@ package web
 
 import (
 	"fmt"
-	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
+	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
 	"net/http"
 )
 

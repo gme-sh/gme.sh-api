@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
 	"log"
 )
 

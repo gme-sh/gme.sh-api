@@ -26,7 +26,7 @@ services:
 
   #
   # Main app
-  # see https://github.com/full-stack-gods/GMEshortener
+  # see https://github.com/gme-sh/gme.sh-api
   #
   gmeshort:
     build: .

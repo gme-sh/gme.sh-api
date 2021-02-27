@@ -3,7 +3,7 @@ package web
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
 	"log"
 	"net/http"
 	"strings"

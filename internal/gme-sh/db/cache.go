@@ -1,6 +1,6 @@
 package db
 
-import "github.com/full-stack-gods/gme.sh-api/pkg/gme-sh/short"
+import "github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
 
 // DBCache is an interface which may be implemented by a StatsDatabase to provide cache functions.
 // └ LocalCache

@@ -1,8 +1,8 @@
 package web
 
 import (
-	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/config"
-	"github.com/full-stack-gods/gme.sh-api/internal/gme-sh/db"
+	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
+	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"

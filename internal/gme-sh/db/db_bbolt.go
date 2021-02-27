@@ -6,6 +6,7 @@ import (
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
 	"go.etcd.io/bbolt"
 	"log"
+	"time"
 )
 
 // PersistentDatabase
@@ -107,4 +108,17 @@ func (bdb *bboltDatabase) ShortURLAvailable(id *short.ShortID) bool {
 		return false
 	}
 	return shortURLAvailable(bdb, id)
+}
+
+// TODO: Allan, please implement this!
+func (*bboltDatabase) FindExpiredURLs() (res []*short.ShortURL, err error) {
+	return []*short.ShortURL{}, nil
+}
+func (*bboltDatabase) GetLastExpirationCheck() *LastExpirationCheckMeta {
+	return &LastExpirationCheckMeta{
+		LastCheck: time.Unix(5, 0),
+	}
+}
+func (*bboltDatabase) UpdateLastExpirationCheck(t time.Time) {
+
 }

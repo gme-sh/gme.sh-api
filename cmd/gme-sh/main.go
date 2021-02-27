@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
@@ -133,6 +134,13 @@ func main() {
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
+	// Expiration check
+	ex := db.NewExpirationCheck(time.Hour, persistentDB)
+	exc := make(chan bool, 1)
+	go ex.Start(exc)
+
+	////////////////////////////////////////////////////////////////////////////////////////
+
 	var hb chan bool
 	if pubSub != nil {
 		hb = db.CreateHeartbeatService(pubSub)
@@ -153,7 +161,11 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
+	// cancel heartbeat
 	hb <- true
+
+	// cancel expiration
+	exc <- true
 
 	// after CTRL+c
 	if pubSub != nil {

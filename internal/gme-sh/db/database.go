@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
 	"log"
+	"time"
 )
 
 // PersistentDatabase functions
@@ -10,10 +11,11 @@ type PersistentDatabase interface {
 	// PersistentDatabase Functions
 	SaveShortenedURL(url *short.ShortURL) (err error)
 	DeleteShortenedURL(id *short.ShortID) (err error)
-
-	// Database Functions
 	FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error)
 	ShortURLAvailable(id *short.ShortID) (available bool)
+	FindExpiredURLs() ([]*short.ShortURL, error)
+	GetLastExpirationCheck() *LastExpirationCheckMeta
+	UpdateLastExpirationCheck(t time.Time)
 }
 
 // StatsDatabase functions

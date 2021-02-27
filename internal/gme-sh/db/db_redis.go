@@ -178,3 +178,17 @@ func (rdb *redisDB) Subscribe(c func(channel, payload string), channels ...strin
 	// if this range ends, re-subscribe
 	return rdb.Subscribe(c, channels...)
 }
+
+// TODO: Allan, please implement this!
+func (*redisDB) FindExpiredURLs() (res []*short.ShortURL, err error) {
+	return []*short.ShortURL{}, nil
+}
+
+func (*redisDB) GetLastExpirationCheck() *LastExpirationCheckMeta {
+	return &LastExpirationCheckMeta{
+		LastCheck: time.Unix(5, 0),
+	}
+}
+func (*redisDB) UpdateLastExpirationCheck(t time.Time) {
+
+}

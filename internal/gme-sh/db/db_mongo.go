@@ -4,9 +4,11 @@ import (
 	"context"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"time"
 )
 
 // PersistentDatabase
@@ -16,6 +18,7 @@ type mongoDatabase struct {
 	cache              DBCache
 	database           string
 	shortURLCollection string
+	metaCollection     string
 }
 
 var updateOptions = options.Update().SetUpsert(true)
@@ -42,12 +45,17 @@ func NewMongoDatabase(cfg *config.MongoConfig, cache DBCache) (db PersistentData
 		context:            ctx,
 		database:           cfg.Database,
 		shortURLCollection: cfg.ShortURLCollection,
+		metaCollection:     cfg.MetaCollection,
 		cache:              cache,
 	}, nil
 }
 
 func (mdb *mongoDatabase) shortURLs() *mongo.Collection {
 	return mdb.client.Database(mdb.database).Collection(mdb.shortURLCollection)
+}
+
+func (mdb *mongoDatabase) meta() *mongo.Collection {
+	return mdb.client.Database(mdb.database).Collection(mdb.metaCollection)
 }
 
 /*
@@ -102,6 +110,58 @@ func (mdb *mongoDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
 		err = mdb.cache.BreakCache(id)
 	}
 	return
+}
+
+func (mdb *mongoDatabase) FindExpiredURLs() (res []*short.ShortURL, err error) {
+	filter := bson.M{
+		"$and": []bson.M{
+			{"expiration_date": bson.M{"$exists": true}},
+			{"expiration_date": bson.M{"$ne": nil}},
+			{"expiration_date": bson.M{"$lt": time.Now()}},
+		},
+	}
+
+	var cursor *mongo.Cursor
+	cursor, err = mdb.shortURLs().Find(mdb.context, filter)
+	if err != nil {
+		return
+	}
+
+	for cursor.Next(mdb.context) {
+		var u *short.ShortURL
+		if err := cursor.Decode(&u); err != nil {
+			return nil, err
+		}
+		res = append(res, u)
+	}
+
+	return
+}
+
+func (mdb *mongoDatabase) GetLastExpirationCheck() (m *LastExpirationCheckMeta) {
+	m = &LastExpirationCheckMeta{LastCheck: time.Unix(5, 0)}
+	res := mdb.meta().FindOne(mdb.context, bson.M{"key": "last_expiration"})
+	if res.Err() != nil {
+		log.Println("GetLastExpirationCheck Err:", res.Err())
+		m.LastCheck = time.Unix(4, 0)
+	} else {
+		if err := res.Decode(m); err != nil {
+			log.Println("GetLastExpirationCheck Err:", err)
+			m.LastCheck = time.Unix(3, 0)
+		}
+	}
+	return
+}
+
+func (mdb *mongoDatabase) UpdateLastExpirationCheck(t time.Time) {
+	m := &LastExpirationCheckMeta{LastCheck: t}
+	_, err := mdb.meta().UpdateOne(
+		mdb.context,
+		bson.M{"key": "last_expiration"},
+		bson.M{"$set": m},
+		options.Update().SetUpsert(true),
+	)
+	log.Println("UpdateLastExpirationCheck Err:", err)
 }
 
 /*

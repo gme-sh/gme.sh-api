@@ -36,6 +36,7 @@ type MongoConfig struct {
 	ApplyURI           string `env:"MDB_APPLY_URI"`
 	Database           string `env:"MDB_DATABASE"`
 	ShortURLCollection string `env:"MDB_COLLECTION_SHORT_URLS"`
+	MetaCollection     string `env:"MDB_COLLECTION_META"`
 }
 
 // RedisConfig -> Config for Redis implementation

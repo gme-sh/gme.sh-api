@@ -1,37 +1,36 @@
-# Instead of redirection, should only a debug message be displayed to which page would have been redirected?
 DryRedirect = true
 
+ExpirationCheckInterval = "10s"
+ExpirationDryRun = true
+
 [BlockedHosts]
-Hosts = [
-    "gme.sh"
-]
+    Hosts = [
+        "gme.sh",
+        "github.com"
+    ]
+
 
 [Backends]
     PersistentBackend = "Mongo"
     StatsBackend = "Redis"
     PubSubBackend = "Redis"
+    CacheBackend = "Shared"
 
 [WebServer]
     # Address on which the WebServer should listen
     Addr = ":1336"
 
 [Database]
-    # Here the backend database can be selected from:
-    # "Mongo" (MongoDB), "BBolt" (BBolt; embedded database)
+    # Mongo, BBolt (embedded)
     Backend = "Mongo"
-
-    # Shared cache only makes sense if you want to run multiple backend shards / servers at the same time.
-    # If a request is then cached on one server, this cache is passed on to all other servers via PubSub,
-    # whereby the requests to the database are brought to a minimum.
-    # -> Still very experimental, can lead to errors!
-    # Enable only if there are performance problems with the database.
     EnableSharedCache = true
 
     # Persistent Database
     [Database.Mongo]
-        ApplyURI = "mongodb://localhost:27017/test?authSource=admin&appname=gme-sh&ssl=true"
+        ApplyURI = "mongodb://whgoxy_test:P9itnCl0SzMWeUKo@whgoxy-shard-00-00.x10rd.mongodb.net:27017,whgoxy-shard-00-01.x10rd.mongodb.net:27017,whgoxy-shard-00-02.x10rd.mongodb.net:27017/test?authSource=admin&replicaSet=atlas-lp4hj7-shard-0&readPreference=primary&appname=whgoxy&ssl=true"
         Database = "gme-sh"
         ShortURLCollection = "short-urls"
+        MetaCollection = "meta"
 
     # Temporary Database
     [Database.Redis]

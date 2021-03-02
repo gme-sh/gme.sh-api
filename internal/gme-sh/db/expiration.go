@@ -24,7 +24,7 @@ func (e *ExpirationCheck) Check() {
 	// find
 	expired, err := e.DB.FindExpiredURLs()
 	if err != nil {
-		log.Fatalln("Error checking for expiration:", err)
+		log.Println("WARN: Error checking for expiration:", err)
 		return
 	}
 	for _, ex := range expired {
@@ -51,6 +51,7 @@ func (e *ExpirationCheck) Start(cancel chan bool) {
 			///
 			// check database for last expiration
 			check := e.DB.GetLastExpirationCheck()
+			log.Println("Last check:", check)
 			sub := time.Now().Sub(check.LastCheck.Add(-2 * time.Second)) // 2s grace
 			if sub <= e.Interval {
 				log.Println("  🤷 ignored bc. last expiration")

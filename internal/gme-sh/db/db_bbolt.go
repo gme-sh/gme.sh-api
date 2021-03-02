@@ -14,6 +14,7 @@ type bboltDatabase struct {
 	database              *bbolt.DB
 	cache                 DBCache
 	shortedURLsBucketName []byte
+	metaBucketName        []byte
 }
 
 // NewBBoltDatabase -> Create new BBoltDatabase
@@ -30,6 +31,7 @@ func NewBBoltDatabase(cfg *config.BBoltConfig, cache DBCache) (bbdb PersistentDa
 		database:              db,
 		cache:                 cache,
 		shortedURLsBucketName: []byte(cfg.ShortedURLsBucketName),
+		metaBucketName:        []byte("meta"), // TODO: config
 	}
 	return
 }
@@ -48,8 +50,8 @@ func (bdb *bboltDatabase) FindShortenedURL(id *short.ShortID) (res *short.ShortU
 	// load from bbolt
 	var content []byte
 	err = bdb.database.View(func(tx *bbolt.Tx) (err error) {
-		var bucket *bbolt.Bucket
-		if bucket, err = tx.CreateBucketIfNotExists(bdb.shortedURLsBucketName); err != nil {
+		bucket := tx.Bucket(bdb.shortedURLsBucketName)
+		if bucket == nil {
 			return
 		}
 		content = bucket.Get(id.Bytes())
@@ -80,6 +82,7 @@ func (bdb *bboltDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 			return
 		}
 		err = bucket.Put(short.ID.Bytes(), shortAsJson)
+		log.Println("Saving Short URL", short, ":", err)
 		return
 	})
 	if err == nil {
@@ -95,6 +98,7 @@ func (bdb *bboltDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
 			return
 		}
 		err = bucket.Delete(id.Bytes())
+		log.Println("Deleting Short URL #", id, ":", err)
 		return
 	})
 	if err == nil {
@@ -110,15 +114,89 @@ func (bdb *bboltDatabase) ShortURLAvailable(id *short.ShortID) bool {
 	return shortURLAvailable(bdb, id)
 }
 
-// TODO: Allan, please implement this!
-func (*bboltDatabase) FindExpiredURLs() (res []*short.ShortURL, err error) {
-	return []*short.ShortURL{}, nil
+func (bdb *bboltDatabase) FindExpiredURLs() (res []*short.ShortURL, err error) {
+	log.Println("CALLED FindExpiredURLs with time")
+	now := time.Now()
+
+	err = bdb.database.View(func(tx *bbolt.Tx) (err error) {
+		bucket := tx.Bucket(bdb.shortedURLsBucketName)
+		if bucket == nil {
+			return
+		}
+
+		err = bucket.ForEach(func(_, v []byte) (err error) {
+			var sh *short.ShortURL
+			err = json.Unmarshal(v, &sh)
+			if err != nil {
+				log.Println("error #2")
+				return
+			}
+			log.Println("Found:", sh.String())
+			// check if expired
+			if sh.ExpirationDate != nil && sh.ExpirationDate.Before(now) {
+				// add to result
+				res = append(res, sh)
+			}
+			return
+		})
+		if err != nil {
+			log.Println("error #3")
+		}
+		return
+	})
+
+	return
 }
-func (*bboltDatabase) GetLastExpirationCheck() *LastExpirationCheckMeta {
-	return &LastExpirationCheckMeta{
+
+func (bdb *bboltDatabase) GetLastExpirationCheck() (m *LastExpirationCheckMeta) {
+	log.Println("CALLED GetLastExpirationCheck with time")
+	m = &LastExpirationCheckMeta{
 		LastCheck: time.Unix(5, 0),
 	}
-}
-func (*bboltDatabase) UpdateLastExpirationCheck(t time.Time) {
 
+	var content []byte
+	if err := bdb.database.View(func(tx *bbolt.Tx) (err error) {
+		bucket := tx.Bucket(bdb.metaBucketName)
+		if bucket == nil {
+			return
+		}
+
+		content = bucket.Get([]byte("last_expired"))
+		log.Println("BBolt :: Content =", string(content))
+		return
+	}); err != nil {
+		return
+	}
+
+	_ = json.Unmarshal(content, &m)
+	return
+}
+
+func (bdb *bboltDatabase) UpdateLastExpirationCheck(t time.Time) {
+	log.Println("CALLED UpdateLastExpirationCheck with time", t)
+
+	m := &LastExpirationCheckMeta{
+		LastCheck: t,
+	}
+
+	if err := bdb.database.Update(func(tx *bbolt.Tx) (err error) {
+		var bucket *bbolt.Bucket
+		if bucket, err = tx.CreateBucketIfNotExists(bdb.metaBucketName); err != nil {
+			return
+		}
+
+		var by []byte
+		by, err = json.Marshal(m)
+		if err != nil {
+			return
+		}
+
+		err = bucket.Put([]byte("last_expired"), by)
+		return
+	}); err != nil {
+		log.Println("ERROR updating last expiration for bbolt:", err)
+		return
+	} else {
+		log.Println("OK updating last expiration for bbolt:", err)
+	}
 }

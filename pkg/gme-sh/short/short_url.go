@@ -1,6 +1,7 @@
 package short
 
 import (
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"strings"
@@ -17,6 +18,10 @@ type ShortURL struct {
 	CreationDate   time.Time  `json:"creation_date" bson:"creation_date"`
 	ExpirationDate *time.Time `json:"expiration_date" bson:"expiration_date"`
 	Secret         string     `json:"secret" bson:"secret"`
+}
+
+func (u *ShortURL) String() string {
+	return fmt.Sprintf("ShortURL #%s (short) :: Long = %s | Created: %s", u.ID.String(), u.FullURL, u.CreationDate.String())
 }
 
 ///////////////////////////////////////////////////////////////////////

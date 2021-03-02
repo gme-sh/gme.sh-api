@@ -27,7 +27,7 @@ ExpirationDryRun = true
 
     # Persistent Database
     [Database.Mongo]
-        ApplyURI = "mongodb://whgoxy_test:P9itnCl0SzMWeUKo@whgoxy-shard-00-00.x10rd.mongodb.net:27017,whgoxy-shard-00-01.x10rd.mongodb.net:27017,whgoxy-shard-00-02.x10rd.mongodb.net:27017/test?authSource=admin&replicaSet=atlas-lp4hj7-shard-0&readPreference=primary&appname=whgoxy&ssl=true"
+        ApplyURI = "mongodb://127.0.0.1:27017/"
         Database = "gme-sh"
         ShortURLCollection = "short-urls"
         MetaCollection = "meta"

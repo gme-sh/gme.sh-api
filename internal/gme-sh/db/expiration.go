@@ -12,11 +12,11 @@ type ExpirationCheck struct {
 	DryRun              bool
 }
 
-func NewExpirationCheck(interval time.Duration, database PersistentDatabase) *ExpirationCheck {
+func NewExpirationCheck(interval time.Duration, dryRun bool, database PersistentDatabase) *ExpirationCheck {
 	return &ExpirationCheck{
 		Interval: interval,
 		DB:       database,
-		DryRun:   true,
+		DryRun:   dryRun,
 	}
 }
 

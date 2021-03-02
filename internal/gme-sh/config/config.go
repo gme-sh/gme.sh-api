@@ -1,14 +1,18 @@
 package config
 
-import "os"
+import (
+	"os"
+)
 
 // Config -> Config for Database implementations
 type Config struct {
-	DryRedirect  bool          `env:"DRY_REDIRECT"`
-	BlockedHosts *BlockedHosts `env:"BLOCKED_HOSTS"`
-	Backends     *BackendConfig
-	Database     *DatabaseConfig
-	WebServer    *WebServerConfig
+	DryRedirect             bool          `env:"DRY_REDIRECT"`
+	BlockedHosts            *BlockedHosts `env:"BLOCKED_HOSTS"`
+	ExpirationCheckInterval duration      `env:"EXPIRATION_CHECK_INTERVAL"`
+	ExpirationDryRun        bool          `env:"EXPIRATION_DRY_RUN"`
+	Backends                *BackendConfig
+	Database                *DatabaseConfig
+	WebServer               *WebServerConfig
 }
 
 type BackendConfig struct {

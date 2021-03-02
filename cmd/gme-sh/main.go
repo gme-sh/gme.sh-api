@@ -2,16 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
+	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
+	"github.com/gme-sh/gme.sh-api/internal/gme-sh/web"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
-
-	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
-	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
-	"github.com/gme-sh/gme.sh-api/internal/gme-sh/web"
 )
 
 const (
@@ -135,7 +133,7 @@ func main() {
 	////////////////////////////////////////////////////////////////////////////////////////
 
 	// Expiration check
-	ex := db.NewExpirationCheck(time.Hour, persistentDB)
+	ex := db.NewExpirationCheck(cfg.ExpirationCheckInterval.Duration, cfg.ExpirationDryRun, persistentDB)
 	exc := make(chan bool, 1)
 	go ex.Start(exc)
 

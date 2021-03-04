@@ -38,6 +38,17 @@ func newRedisDB(cfg *config.RedisConfig) (*redisDB, error) {
 	}, nil
 }
 
+func (*redisDB) ServiceName() string {
+	return "Redis"
+}
+
+func (rdb *redisDB) HealthCheck(ctx context.Context) (err error) {
+	err = rdb.client.Ping(ctx).Err()
+	return
+}
+
+////
+
 // NewRedisDatabase -> Use Redis as backend
 func NewRedisDatabase(cfg *config.RedisConfig) (PersistentDatabase, error) {
 	return newRedisDB(cfg)

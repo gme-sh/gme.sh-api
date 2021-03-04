@@ -139,16 +139,18 @@ func main() {
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
-	var hb chan bool
-	if pubSub != nil {
-		hb = db.CreateHeartbeatService(pubSub)
-	} else {
-		hb = make(chan bool, 1)
+	health, err := db.NewHealthCheck(persistentDB, statsDB, pubSub)
+	if err != nil {
+		log.Fatalln("Error creating health check:", err)
+		return
 	}
+
 	////
 
 	//// Web-Server
 	server := web.NewWebServer(persistentDB, statsDB, cfg)
+	// stats
+	server.Router.Handle("/health", health.Handler())
 	go server.Start()
 	////
 
@@ -158,9 +160,6 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
-
-	// cancel heartbeat
-	hb <- true
 
 	// cancel expiration
 	exc <- true

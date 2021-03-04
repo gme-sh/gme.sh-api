@@ -50,6 +50,17 @@ func NewMongoDatabase(cfg *config.MongoConfig, cache DBCache) (db PersistentData
 	}, nil
 }
 
+func (*mongoDatabase) ServiceName() string {
+	return "MongoDB"
+}
+
+func (mdb *mongoDatabase) HealthCheck(ctx context.Context) (err error) {
+	err = mdb.client.Ping(ctx, nil)
+	return
+}
+
+////
+
 func (mdb *mongoDatabase) shortURLs() *mongo.Collection {
 	return mdb.client.Database(mdb.database).Collection(mdb.shortURLCollection)
 }

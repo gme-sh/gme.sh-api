@@ -1,50 +1,47 @@
 package db
 
 import (
+	"github.com/hellofresh/health-go/v4"
 	"log"
-	"sync"
 	"time"
 )
 
-// LastHeartbeatError contains the last thrown error of the backend (StatsDatabase).
-// If everything is running, this variable should be nil
-var LastHeartbeatError error
-var mu = &sync.Mutex{}
-
-func createTickerAndCheck(tdb PubSub, c chan bool) {
-	ticker := time.NewTicker(1 * time.Second)
-	for {
-		select {
-		case <-ticker.C:
-			err := tdb.Heartbeat()
-
-			// only send error if new
-			if err != LastHeartbeatError {
-				if err == nil || LastHeartbeatError == nil || err.Error() != LastHeartbeatError.Error() {
-					if err != nil {
-						log.Println("💔 Heartbeat failed:", err)
-					} else {
-						log.Println("💚 Heartbeat successful.")
-					}
-				}
-			}
-
-			mu.Lock()
-			LastHeartbeatError = err
-			mu.Unlock()
-
-			break
-		case <-c:
-			log.Println("\U0001FAA6 RIP: Heartbeat Service stopped.")
-			ticker.Stop()
-			return
+func NewHealthCheck(pe PersistentDatabase, st StatsDatabase, ps PubSub) (h *health.Health, err error) {
+	h, err = health.New()
+	if err != nil {
+		log.Fatalln("Health-Service:", err)
+		return
+	}
+	// register persistent check
+	if pe != nil {
+		if err := h.Register(health.Config{
+			Name:      "Persistent (" + pe.ServiceName() + ")",
+			Timeout:   5 * time.Second,
+			SkipOnErr: true,
+			Check:     pe.HealthCheck,
+		}); err != nil {
+			log.Println("Error registering health service:", err)
 		}
 	}
-}
-
-// CreateHeartbeatService x starts the Heartbeat service and creates a channel to end the service by sending true
-func CreateHeartbeatService(tdb PubSub) chan bool {
-	c := make(chan bool, 1)
-	go createTickerAndCheck(tdb, c)
-	return c
+	if st != nil {
+		if err := h.Register(health.Config{
+			Name:      "Stats (" + st.ServiceName() + ")",
+			Timeout:   5 * time.Second,
+			SkipOnErr: true,
+			Check:     st.HealthCheck,
+		}); err != nil {
+			log.Println("Error registering health service:", err)
+		}
+	}
+	if ps != nil {
+		if err := h.Register(health.Config{
+			Name:      "PubSub (" + ps.ServiceName() + ")",
+			Timeout:   5 * time.Second,
+			SkipOnErr: true,
+			Check:     ps.HealthCheck,
+		}); err != nil {
+			log.Println("Error registering health service:", err)
+		}
+	}
+	return
 }

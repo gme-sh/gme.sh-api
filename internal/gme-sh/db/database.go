@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
 	"log"
 	"time"
@@ -8,6 +9,9 @@ import (
 
 // PersistentDatabase functions
 type PersistentDatabase interface {
+	ServiceName() string
+	HealthCheck(ctx context.Context) error
+
 	// PersistentDatabase Functions
 	SaveShortenedURL(url *short.ShortURL) (err error)
 	DeleteShortenedURL(id *short.ShortID) (err error)
@@ -20,6 +24,9 @@ type PersistentDatabase interface {
 
 // StatsDatabase functions
 type StatsDatabase interface {
+	ServiceName() string
+	HealthCheck(ctx context.Context) error
+
 	// StatsDatabase Functions
 	FindStats(id *short.ShortID) (stats *short.Stats, err error)
 	AddStats(id *short.ShortID) (err error)
@@ -27,6 +34,9 @@ type StatsDatabase interface {
 }
 
 type PubSub interface {
+	ServiceName() string
+	HealthCheck(ctx context.Context) error
+
 	Heartbeat() (err error)
 	Publish(channel, msg string) (err error)
 	Subscribe(c func(channel, payload string), channels ...string) (err error)

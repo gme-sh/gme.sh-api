@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
@@ -41,6 +42,24 @@ func NewBBoltDatabase(cfg *config.BBoltConfig, cache DBCache) (bbdb PersistentDa
  *                            P E R M A N E N T  D A T A B A S E
  * ==================================================================================================
  */
+
+func (*bboltDatabase) ServiceName() string {
+	return "BBolt"
+}
+
+func (bdb *bboltDatabase) HealthCheck(context.Context) (err error) {
+	err = bdb.database.Update(func(tx *bbolt.Tx) (err error) {
+		var bucket *bbolt.Bucket
+		if bucket, err = tx.CreateBucketIfNotExists([]byte("health_check")); err != nil {
+			return
+		}
+		err = bucket.Put([]byte("ping"), []byte("pong"))
+		return
+	})
+	return
+}
+
+///
 
 func (bdb *bboltDatabase) FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error) {
 	// check cache

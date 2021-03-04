@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"time"
 )
 
@@ -24,6 +25,16 @@ type createShortURLResponse struct {
 	Success bool            `json:"success"`
 	Message string          `json:"message"`
 	Short   *short.ShortURL `json:"short"`
+}
+
+var urlRegex *regexp.Regexp
+
+func init() {
+	var err error
+	urlRegex, err = regexp.Compile("^(https?://)?((([\\da-z.-]+)\\.([a-z.]{2,6}))|[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})(:[0-9]+)?([/\\w .-]*)/?([/\\w .-]*)/?(([?&]).+?(=.+?)?)*$")
+	if err != nil {
+		log.Fatalln("error compiling regex:", err)
+	}
 }
 
 func dieCreate(w http.ResponseWriter, o interface{}) {
@@ -97,6 +108,13 @@ func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("    └ 🤬 But the body was weird (json)")
 		dieCreate(w, err)
+		return
+	}
+
+	// check url
+	if !urlRegex.MatchString(req.FullURL) {
+		log.Println("    └ 🤬 But the URL didn't match the regex")
+		dieCreate(w, "invalid url")
 		return
 	}
 

@@ -111,3 +111,7 @@ func (id *ShortID) String() string {
 func (id *ShortID) Bytes() []byte {
 	return []byte(id.String())
 }
+
+func (id *ShortID) Empty() bool {
+	return len(strings.TrimSpace(id.String())) > 0
+}

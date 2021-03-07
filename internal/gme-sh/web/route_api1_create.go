@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
-	"io/ioutil"
+	"github.com/gofiber/fiber/v2"
 	"log"
 	"net/http"
 	"net/url"
@@ -16,9 +16,9 @@ import (
 const CreateResponseOK = "success"
 
 type createShortURLPayload struct {
-	FullURL            string `json:"full_url"`
-	PreferredAlias     string `json:"preferred_alias"`
-	ExpireAfterSeconds int    `json:"expire_after_seconds"`
+	FullURL            string        `json:"full_url"`
+	PreferredAlias     short.ShortID `json:"preferred_alias"`
+	ExpireAfterSeconds int           `json:"expire_after_seconds"`
 }
 
 type createShortURLResponse struct {
@@ -85,104 +85,88 @@ func dieCreate(w http.ResponseWriter, o interface{}) {
 	_, _ = fmt.Fprintln(w, string(msg))
 }
 
-// mux
-// POST application/json /api/v1/create
-func (ws *WebServer) handleApiV1Create(w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		_ = r.Body.Close()
-	}()
-
-	log.Println("🚀", r.RemoteAddr, "requested to POST create a new short URL")
-
-	// read body
-	body, err := ioutil.ReadAll(r.Body)
+// fiber
+// TODO: Add status
+// TODO: return error
+func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
+	req := new(createShortURLPayload)
+	err = ctx.BodyParser(req)
 	if err != nil {
-		log.Println("    └ 🤬 But the body was weird (read)")
-		dieCreate(w, err)
 		return
 	}
-
-	// parse body
-	var req *createShortURLPayload
-	err = json.Unmarshal(body, &req)
-	if err != nil {
-		log.Println("    └ 🤬 But the body was weird (json)")
-		dieCreate(w, err)
-		return
-	}
-
 	// check url
 	if !urlRegex.MatchString(req.FullURL) {
 		log.Println("    └ 🤬 But the URL didn't match the regex")
-		dieCreate(w, "invalid url")
-		return
-	}
 
-	// Check blocks / loops
+	}
+	// parse given url
 	u, err := url.Parse(req.FullURL)
 	if err != nil {
-		dieCreate(w, err)
-		return
+		return ctx.JSON(&createShortURLResponse{
+			Success: false,
+			Message: err.Error(),
+		})
 	}
+	// checks if url is blacklisted
 	if err := ws.checkDomain(u); err != nil {
-		dieCreate(w, err)
-		return
+		return ctx.JSON(&createShortURLResponse{
+			Success: false,
+			Message: err.Error(),
+		})
 	}
-	//
 
-	checkedAvailability := false
-
-	/// Generate ID and check if alias already exists
+	// no custom alias set?
+	// -> generate alias
 	if req.PreferredAlias == "" {
-		if generated := short.GenerateShortID(ws.PersistentDatabase.ShortURLAvailable); generated != "" {
-			req.PreferredAlias = generated.String()
-			checkedAvailability = true
+		if generated := short.GenerateShortID(ws.persistentDB.ShortURLAvailable); !generated.Empty() {
+			req.PreferredAlias = generated
 		} else {
-			log.Println("    └ 🤬 But all tried aliases were already occupied")
-			dieCreate(w, "generated id not available")
-			return
+			return ctx.JSON(&createShortURLResponse{
+				Success: false,
+				Message: "no generated alias available",
+			})
+		}
+	} else {
+		if available := ws.persistentDB.ShortURLAvailable(&req.PreferredAlias); !available {
+			return ctx.JSON(&createShortURLResponse{
+				Success: false,
+				Message: "alias not available",
+			})
 		}
 	}
 	log.Println("    └ 👉 Preferred alias:", req.PreferredAlias)
 
-	// ShortURL Info
-	aliasID := short.ShortID(req.PreferredAlias)
+	// expiration
 	duration := time.Duration(req.ExpireAfterSeconds) * time.Second
-
-	// check if alias already exists
-	if !checkedAvailability {
-		if available := ws.PersistentDatabase.ShortURLAvailable(&aliasID); !available {
-			log.Println("    └ 🤬 But the preferred was already occupied")
-			dieCreate(w, "preferred alias is not available")
-			return
-		}
-	}
-	///
-
 	var expiration *time.Time
 	if duration > 0 {
 		v := time.Now().Add(duration)
 		expiration = &v
 	}
 
-	// create short id
+	// generate secret
 	secret := short.GenerateID(32, short.AlwaysTrue, 0)
+
+	// create short url object
 	sh := &short.ShortURL{
-		ID:             short.ShortID(req.PreferredAlias),
+		ID:             req.PreferredAlias,
 		FullURL:        req.FullURL,
 		CreationDate:   time.Now(),
 		ExpirationDate: expiration,
 		Secret:         secret.String(),
 	}
 
-	if err := ws.PersistentDatabase.SaveShortenedURL(sh); err != nil {
-		log.Println("    └ 🤬 But something went wrong saving (persistent):", err)
-		dieCreate(w, err)
-		return
+	// save to database
+	if err := ws.persistentDB.SaveShortenedURL(sh); err != nil {
+		return ctx.JSON(&createShortURLResponse{
+			Success: false,
+			Message: err.Error(),
+		})
 	}
 
 	log.Println("    └ 💚 Looks like it worked out")
-	dieCreate(w, &createShortURLResponse{
+
+	return ctx.JSON(&createShortURLResponse{
 		Success: true,
 		Message: CreateResponseOK,
 		Short:   sh,

@@ -1,4 +1,4 @@
-package web
+package shortreq
 
 type Successable struct {
 	Success bool        `json:"success"`

@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/shortreq"
 	"github.com/gofiber/fiber/v2"
 	"log"
 	"net/url"
@@ -9,12 +10,6 @@ import (
 	"strconv"
 	"time"
 )
-
-type createShortURLPayload struct {
-	FullURL            string        `json:"full_url"`
-	PreferredAlias     short.ShortID `json:"preferred_alias"`
-	ExpireAfterSeconds int           `json:"expire_after_seconds"`
-}
 
 var urlRegex *regexp.Regexp
 
@@ -27,7 +22,7 @@ func init() {
 }
 
 func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
-	req := new(createShortURLPayload)
+	req := new(shortreq.CreateShortURLPayload)
 	err = ctx.BodyParser(req)
 	if err != nil {
 		return

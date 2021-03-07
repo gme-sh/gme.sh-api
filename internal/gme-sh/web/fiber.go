@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/shortreq"
 	"github.com/gofiber/fiber/v2"
 	"log"
 )
@@ -20,7 +21,7 @@ func _errResponse(ctx *fiber.Ctx, status int, err ...interface{}) error {
 			log.Println("invalid type")
 		}
 	}
-	return ctx.Status(status).JSON(&Successable{
+	return ctx.Status(status).JSON(&shortreq.Successable{
 		Success: false,
 		Message: message,
 	})
@@ -35,14 +36,14 @@ func ServerErrorResponse(ctx *fiber.Ctx, err ...interface{}) error {
 }
 
 func SuccessResponse(ctx *fiber.Ctx) error {
-	return ctx.Status(200).JSON(&Successable{
+	return ctx.Status(200).JSON(&shortreq.Successable{
 		Success: true,
 		Message: "success",
 	})
 }
 
 func SuccessDataResponse(ctx *fiber.Ctx, data interface{}) error {
-	return ctx.Status(200).JSON(&Successable{
+	return ctx.Status(200).JSON(&shortreq.Successable{
 		Success: true,
 		Message: "success",
 		Data:    data,
@@ -50,14 +51,14 @@ func SuccessDataResponse(ctx *fiber.Ctx, data interface{}) error {
 }
 
 func SuccessMessageResponse(ctx *fiber.Ctx, message string) error {
-	return ctx.Status(200).JSON(&Successable{
+	return ctx.Status(200).JSON(&shortreq.Successable{
 		Success: true,
 		Message: message,
 	})
 }
 
 func SuccessMessageDataResponse(ctx *fiber.Ctx, message string, data interface{}) error {
-	return ctx.Status(200).JSON(&Successable{
+	return ctx.Status(200).JSON(&shortreq.Successable{
 		Success: true,
 		Message: message,
 		Data:    data,

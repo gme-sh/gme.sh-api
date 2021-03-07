@@ -4,9 +4,7 @@ import (
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gorilla/mux"
 	"log"
-	"net/http"
 )
 
 // WebServer struct that holds databases and configs
@@ -21,32 +19,24 @@ type WebServer struct {
 func (ws *WebServer) Start() {
 	app := ws.App
 
-	// GET /heartbeat
-	// This page returns the status 200 if the backend is running. otherwise a 5xx error
-	// TODO: Fiber
-	ws.Router.HandleFunc("/heartbeat", ws.handleApiV1Heartbeat).Methods(http.MethodGet)
-
 	// POST /create
 	// Used to create new short URLs
 	app.Post("/create", ws.fiberRouteCreate)
 
 	// DELETE /{id}/{secret}
 	// Used to delete short URLs
-	// TODO: Fiber
-	ws.Router.HandleFunc("/{id}/{secret64}", ws.handleApiV1Delete).Methods(http.MethodDelete)
+	app.Delete("/:id/:secret", ws.fiberRouteDelete)
 
 	// GET /stats/{id}
 	// Used to retrieve stats for a short url
-	// TODO: Fiber
-	ws.Router.HandleFunc("/stats/{id}", ws.handleApiV1Stats).Methods(http.MethodGet)
+	app.Get("/stats/:id", ws.fiberRouteStats)
 
 	// GET /{id}
 	// Used for redirection to long url
-	// TODO: Fiber
-	ws.Router.HandleFunc("/{id}", ws.handleRedirect).Methods(http.MethodGet)
+	app.Get("/:id", ws.fiberRouteRedirect)
 
 	log.Println("🌎 Binding", ws.config.WebServer.Addr, "...")
-	if err := http.ListenAndServe(ws.config.WebServer.Addr, ws.Router); err != nil {
+	if err := app.Listen(ws.config.WebServer.Addr); err != nil {
 		log.Fatalln("    └ ❌ FAILED:", err)
 	}
 }

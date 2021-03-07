@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 )
@@ -22,13 +21,4 @@ func (ws *WebServer) getBlockedHostLocation(u *url.URL) (int, bool) {
 		}
 	}
 	return -1, false
-}
-
-func (ws *WebServer) checkDomain(u *url.URL) error {
-	// block detection
-	if index, blocked := ws.getBlockedHostLocation(u); blocked {
-		return fmt.Errorf("host (%s) is blocked (%d)", u.Host, index)
-	}
-
-	return nil
 }

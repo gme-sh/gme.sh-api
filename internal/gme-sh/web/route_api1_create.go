@@ -1,30 +1,19 @@
 package web
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
 	"github.com/gofiber/fiber/v2"
 	"log"
-	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"time"
 )
-
-// CreateResponseOK is returned when everything worked fine
-const CreateResponseOK = "success"
 
 type createShortURLPayload struct {
 	FullURL            string        `json:"full_url"`
 	PreferredAlias     short.ShortID `json:"preferred_alias"`
 	ExpireAfterSeconds int           `json:"expire_after_seconds"`
-}
-
-type createShortURLResponse struct {
-	Success bool            `json:"success"`
-	Message string          `json:"message"`
-	Short   *short.ShortURL `json:"short"`
 }
 
 var urlRegex *regexp.Regexp
@@ -37,57 +26,6 @@ func init() {
 	}
 }
 
-func dieCreate(w http.ResponseWriter, o interface{}) {
-	var res *createShortURLResponse
-
-	switch v := o.(type) {
-	case error:
-		res = &createShortURLResponse{
-			Success: false,
-			Message: v.Error(),
-			Short:   nil,
-		}
-		break
-	case string:
-		res = &createShortURLResponse{
-			Success: false,
-			Message: v,
-			Short:   nil,
-		}
-		break
-	case *createShortURLResponse:
-		res = v
-		break
-	}
-
-	if res == nil {
-		res = &createShortURLResponse{
-			Success: false,
-			Message: "an unknown error occurred.",
-			Short:   nil,
-		}
-	}
-
-	var msg []byte
-	var err error
-	msg, err = json.Marshal(res)
-	if err != nil {
-		_, _ = fmt.Fprintln(w, res.Message)
-		return
-	}
-
-	if res.Success {
-		w.WriteHeader(200)
-	} else {
-		w.WriteHeader(400)
-	}
-
-	_, _ = fmt.Fprintln(w, string(msg))
-}
-
-// fiber
-// TODO: Add status
-// TODO: return error
 func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 	req := new(createShortURLPayload)
 	err = ctx.BodyParser(req)
@@ -102,39 +40,25 @@ func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 	// parse given url
 	u, err := url.Parse(req.FullURL)
 	if err != nil {
-		return ctx.JSON(&createShortURLResponse{
-			Success: false,
-			Message: err.Error(),
-		})
+		return UserErrorResponse(ctx, err)
 	}
-	// checks if url is blacklisted
-	if err := ws.checkDomain(u); err != nil {
-		return ctx.JSON(&createShortURLResponse{
-			Success: false,
-			Message: err.Error(),
-		})
+	// check if url is blacklisted
+	if i, b := ws.getBlockedHostLocation(u); b {
+		return UserErrorResponse(ctx, "domain is blocked (i#"+strconv.Itoa(i)+")")
 	}
-
 	// no custom alias set?
 	// -> generate alias
 	if req.PreferredAlias == "" {
 		if generated := short.GenerateShortID(ws.persistentDB.ShortURLAvailable); !generated.Empty() {
 			req.PreferredAlias = generated
 		} else {
-			return ctx.JSON(&createShortURLResponse{
-				Success: false,
-				Message: "no generated alias available",
-			})
+			return ServerErrorResponse(ctx, "no generated alias available")
 		}
 	} else {
 		if available := ws.persistentDB.ShortURLAvailable(&req.PreferredAlias); !available {
-			return ctx.JSON(&createShortURLResponse{
-				Success: false,
-				Message: "alias not available",
-			})
+			return UserErrorResponse(ctx, "alias not available")
 		}
 	}
-	log.Println("    └ 👉 Preferred alias:", req.PreferredAlias)
 
 	// expiration
 	duration := time.Duration(req.ExpireAfterSeconds) * time.Second
@@ -158,17 +82,9 @@ func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 
 	// save to database
 	if err := ws.persistentDB.SaveShortenedURL(sh); err != nil {
-		return ctx.JSON(&createShortURLResponse{
-			Success: false,
-			Message: err.Error(),
-		})
+		return ServerErrorResponse(ctx, err)
 	}
 
 	log.Println("    └ 💚 Looks like it worked out")
-
-	return ctx.JSON(&createShortURLResponse{
-		Success: true,
-		Message: CreateResponseOK,
-		Short:   sh,
-	})
+	return SuccessDataResponse(ctx, sh)
 }

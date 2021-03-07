@@ -1,76 +1,48 @@
 package web
 
 import (
-	"encoding/base64"
-	"fmt"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
-	"log"
-	"net/http"
+	"github.com/gofiber/fiber/v2"
 	"strings"
-
-	"github.com/gorilla/mux"
 )
 
-func (ws *WebServer) handleRedirect(writer http.ResponseWriter, request *http.Request) {
-	vars := mux.Vars(request)
-	id := short.ShortID(vars["id"])
-
-	if strings.Contains(string(id), ".") {
-		log.Println("👋 Rejected", request.RemoteAddr, "because he/she/it requested file", id)
-		_, _ = fmt.Fprintln(writer, "requested file. but this isn't a file server, got that?!")
-		return
+func (ws *WebServer) fiberRouteRedirect(ctx *fiber.Ctx) (err error) {
+	id := short.ShortID(ctx.Params("id"))
+	if id.Empty() {
+		// TODO: redirect to 404?!
+		return UserErrorResponse(ctx, "empty short id")
 	}
-
-	log.Println("🚀", request.RemoteAddr, "requested to GET redirect to", id)
-
-	url, err := ws.PersistentDatabase.FindShortenedURL(&id)
-	log.Println("url, err :=", url, err)
-	if url == nil || err != nil {
-		log.Println("    🤬 But it was not found:", err)
-		b64id := base64.StdEncoding.EncodeToString([]byte(id))
-
-		if ws.config.DryRedirect {
-			_, _ = fmt.Fprintln(writer, "would redirect to /404/"+b64id, "with code 302 (disabled because DryRedirect = True)")
-		} else {
-			http.Redirect(writer, request, "/404/"+b64id, 302)
-		}
-
-		return
+	// check if requested file
+	if strings.Contains(id.String(), ".") {
+		return UserErrorResponse(ctx, "requested file")
 	}
-
-	// check if url is expired
-	if url.IsExpired() {
-		log.Println("    🤬 But it was expired")
-		b64id := base64.StdEncoding.EncodeToString([]byte(id))
-
-		// remove from database
-		err := ws.PersistentDatabase.DeleteShortenedURL(&id)
-
-		// serialize error
-		e64 := ""
+	// find short url
+	var sh *short.ShortURL
+	sh, err = ws.persistentDB.FindShortenedURL(&id)
+	if sh == nil || err != nil {
+		// TODO: redirect to 404?!
+		return UserErrorResponse(ctx, "short url ["+id.String()+"] not found")
+	}
+	// check if expired
+	if sh.IsExpired() {
+		// delete
+		err = ws.persistentDB.DeleteShortenedURL(&id)
 		if err != nil {
-			e64 = base64.StdEncoding.EncodeToString([]byte(err.Error()))
+			return
 		}
-
-		http.Redirect(writer, request, "/expired/"+b64id+"?err="+e64, 302)
-		return
+		return UserErrorResponse(ctx, "expired")
 	}
-
-	if ws.config.DryRedirect {
-		_, _ = fmt.Fprintln(writer, "would redirect to", url.FullURL, "with code 302 (disabled because DryRedirect = True)")
-	} else {
-		http.Redirect(writer, request, url.FullURL, 302)
-	}
-
-	// add stats async
-	if !url.IsTemporary() {
-		log.Println("  📊 Add stats for", id.String())
+	// add stats
+	if !sh.IsTemporary() {
 		go func() {
-			if err = ws.StatsDatabase.AddStats(&id); err != nil {
-				log.Println("    ⏱ Stats could not be stored:", err)
-			}
+			_ = ws.statsDB.AddStats(&id)
 		}()
-	} else {
-		log.Println("  📊 Skipped stats for", id.String(), "because url was temporary")
 	}
+	// dry redirect (debug)
+	if ws.config.DryRedirect {
+		return SuccessMessageResponse(ctx, "would redirect to ["+sh.FullURL+"]")
+	}
+
+	// redirect
+	return ctx.Redirect(sh.FullURL, 302)
 }

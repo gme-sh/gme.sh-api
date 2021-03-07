@@ -46,15 +46,11 @@ func (e *ExpirationCheck) Start(cancel chan bool) {
 			log.Println("(Cancel) cancelled expiration check")
 			return
 		case <-t.C:
-			log.Println("(Tick) Checking for expired urls")
-
 			///
 			// check database for last expiration
 			check := e.DB.GetLastExpirationCheck()
-			log.Println("Last check:", check)
 			sub := time.Now().Sub(check.LastCheck.Add(-2 * time.Second)) // 2s grace
 			if sub <= e.Interval {
-				log.Println("  🤷 ignored bc. last expiration")
 				break
 			}
 			e.DB.UpdateLastExpirationCheck(time.Now().Add(-2 * time.Second)) // now + 2s grace

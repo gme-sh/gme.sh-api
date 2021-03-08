@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
-	"log"
 	"strings"
 )
 
@@ -40,7 +39,6 @@ func (s *SharedCache) UpdateCache(u *short.ShortURL) (err error) {
 	if err != nil {
 		return
 	}
-	log.Println("Publishing update for #", u.ID.String(), "...")
 	err = s.pubSub.Publish(s.createSCacheUpdatePayload(u))
 	return
 }
@@ -51,9 +49,7 @@ func (s *SharedCache) UpdateCache(u *short.ShortURL) (err error) {
 func (s *SharedCache) BreakCache(id *short.ShortID) (err error) {
 	// since the BreakCache from LocalCache always returns nil,
 	// we don't have to deal with any exception here
-	err = s.local.BreakCache(id)
-
-	log.Println("Publishing break for #", id.String(), "...")
+	_ = s.local.BreakCache(id)
 	err = s.pubSub.Publish(s.createSCacheBreakPayload(id))
 	return
 }
@@ -95,11 +91,9 @@ func extractID(in *string) (id string) {
 
 func (s *SharedCache) sameID(id string) bool {
 	if id == "" {
-		log.Println("DEBUG :: Skipped scache update because the node-id was empty")
 		return true
 	}
 	if id == s.NodeID {
-		log.Println("DEBUG :: Skipped scache update because the node-id was the same")
 		return true
 	}
 	return false
@@ -146,8 +140,6 @@ func (s *SharedCache) Subscribe() (err error) {
 			// remove from cache
 			_ = s.local.BreakCache(&id)
 			break
-		default:
-			log.Println("WARN: Subscibed to a channel we don't know")
 		}
 	}, SCacheChannelBreak, SCacheChannelUpdate)
 	return

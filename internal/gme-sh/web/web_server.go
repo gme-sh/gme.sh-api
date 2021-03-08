@@ -4,7 +4,14 @@ import (
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
+	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
 	"log"
+	"net/http"
+	"strings"
+	"time"
 )
 
 // WebServer struct that holds databases and configs
@@ -18,6 +25,34 @@ type WebServer struct {
 // Start starts the WebServer and listens on the specified port
 func (ws *WebServer) Start() {
 	app := ws.App
+
+	// logger middleware
+	app.Use(logger.New())
+
+	// limiter middleware
+	app.Use(limiter.New(limiter.Config{
+		Max:        30,
+		Expiration: 1 * time.Minute,
+		Next: func(c *fiber.Ctx) bool {
+			// do not skip /create, /delete
+			if c.Method() == http.MethodDelete || c.Method() == http.MethodPost {
+				return false
+			}
+			// do not skip stats
+			if strings.HasPrefix(c.Path(), "/stats") {
+				return false
+			}
+			return true
+		},
+	}))
+
+	// panic middleware
+	app.Use(recover2.New(recover2.Config{
+		EnableStackTrace: true,
+	}))
+
+	// monitor "middleware"
+	app.Get("/dashboard", monitor.New())
 
 	// POST /create
 	// Used to create new short URLs

@@ -3,57 +3,86 @@ package web
 import (
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
+	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
 	"log"
 	"net/http"
+	"strings"
+	"time"
 )
 
 // WebServer struct that holds databases and configs
 type WebServer struct {
-	db.PersistentDatabase
-	db.StatsDatabase
-	config *config.Config
-	Router *mux.Router
+	persistentDB db.PersistentDatabase
+	statsDB      db.StatsDatabase
+	config       *config.Config
+	App          *fiber.App
 }
 
 // Start starts the WebServer and listens on the specified port
 func (ws *WebServer) Start() {
-	// GET /gme-sh-block
-	// Used to check if a web page blocks gme.sh (e.g. for loop prevention).
-	ws.Router.HandleFunc("/gme-sh-block", ws.handleGMEBlock).Methods(http.MethodGet)
+	app := ws.App
 
-	// GET /heartbeat
-	// This page returns the status 200 if the backend is running. otherwise a 5xx error
-	ws.Router.HandleFunc("/heartbeat", ws.handleApiV1Heartbeat).Methods(http.MethodGet)
+	// logger middleware
+	app.Use(logger.New())
+
+	// limiter middleware
+	app.Use(limiter.New(limiter.Config{
+		Max:        30,
+		Expiration: 1 * time.Minute,
+		Next: func(c *fiber.Ctx) bool {
+			// do not skip /create, /delete
+			if c.Method() == http.MethodDelete || c.Method() == http.MethodPost {
+				return false
+			}
+			// do not skip stats
+			if strings.HasPrefix(c.Path(), "/stats") {
+				return false
+			}
+			return true
+		},
+	}))
+
+	// panic middleware
+	app.Use(recover2.New(recover2.Config{
+		EnableStackTrace: true,
+	}))
+
+	// monitor "middleware"
+	app.Get("/dashboard", monitor.New())
 
 	// POST /create
 	// Used to create new short URLs
-	ws.Router.HandleFunc("/create", ws.handleApiV1Create).Methods(http.MethodPost)
+	app.Post("/create", ws.fiberRouteCreate)
 
 	// DELETE /{id}/{secret}
 	// Used to delete short URLs
-	ws.Router.HandleFunc("/{id}/{secret64}", ws.handleApiV1Delete).Methods(http.MethodDelete)
+	app.Delete("/:id/:secret", ws.fiberRouteDelete)
 
 	// GET /stats/{id}
 	// Used to retrieve stats for a short url
-	ws.Router.HandleFunc("/stats/{id}", ws.handleApiV1Stats).Methods(http.MethodGet)
+	app.Get("/stats/:id", ws.fiberRouteStats)
 
 	// GET /{id}
 	// Used for redirection to long url
-	ws.Router.HandleFunc("/{id}", ws.handleRedirect).Methods(http.MethodGet)
+	app.Get("/:id", ws.fiberRouteRedirect)
 
 	log.Println("🌎 Binding", ws.config.WebServer.Addr, "...")
-	if err := http.ListenAndServe(ws.config.WebServer.Addr, ws.Router); err != nil {
+	if err := app.Listen(ws.config.WebServer.Addr); err != nil {
 		log.Fatalln("    └ ❌ FAILED:", err)
 	}
 }
 
 // NewWebServer returns a new WebServer object (reference)
-func NewWebServer(persistent db.PersistentDatabase, temporary db.StatsDatabase, cfg *config.Config) *WebServer {
+func NewWebServer(persistentDB db.PersistentDatabase, statsDB db.StatsDatabase, cfg *config.Config) *WebServer {
+	app := fiber.New()
 	return &WebServer{
-		persistent,
-		temporary,
-		cfg,
-		mux.NewRouter(),
+		persistentDB: persistentDB,
+		statsDB:      statsDB,
+		config:       cfg,
+		App:          app,
 	}
 }

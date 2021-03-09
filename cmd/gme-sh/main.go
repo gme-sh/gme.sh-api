@@ -5,6 +5,7 @@ import (
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/web"
+	"github.com/gofiber/adaptor/v2"
 	"log"
 	"os"
 	"os/signal"
@@ -150,7 +151,7 @@ func main() {
 	//// Web-Server
 	server := web.NewWebServer(persistentDB, statsDB, cfg)
 	// stats
-	server.Router.Handle("/health", health.Handler())
+	server.App.Get("/health", adaptor.HTTPHandler(health.Handler()))
 	go server.Start()
 	////
 

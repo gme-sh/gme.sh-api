@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
-	"log"
 	"strings"
 )
 
@@ -40,7 +39,6 @@ func (s *SharedCache) UpdateCache(u *short.ShortURL) (err error) {
 	if err != nil {
 		return
 	}
-	log.Println("Publishing update for #", u.ID.String(), "...")
 	err = s.pubSub.Publish(s.createSCacheUpdatePayload(u))
 	return
 }
@@ -51,9 +49,7 @@ func (s *SharedCache) UpdateCache(u *short.ShortURL) (err error) {
 func (s *SharedCache) BreakCache(id *short.ShortID) (err error) {
 	// since the BreakCache from LocalCache always returns nil,
 	// we don't have to deal with any exception here
-	err = s.local.BreakCache(id)
-
-	log.Println("Publishing break for #", id.String(), "...")
+	_ = s.local.BreakCache(id)
 	err = s.pubSub.Publish(s.createSCacheBreakPayload(id))
 	return
 }
@@ -61,16 +57,13 @@ func (s *SharedCache) BreakCache(id *short.ShortID) (err error) {
 func (s *SharedCache) GetShortURL(id *short.ShortID) *short.ShortURL {
 	i, found := s.local.Get(id.String())
 	if !found {
-		log.Println("GetShortURL: not found")
 		return nil
 	}
 	u, ok := i.(*short.ShortURL)
 	if !ok {
-		log.Println("GetShortURL: not valid cast")
 		return nil
 	}
 	if u.IsExpired() {
-		log.Println("GetShortURL: is expired")
 		_ = s.BreakCache(id)
 		u = nil
 	}
@@ -98,11 +91,9 @@ func extractID(in *string) (id string) {
 
 func (s *SharedCache) sameID(id string) bool {
 	if id == "" {
-		log.Println("DEBUG :: Skipped scache update because the node-id was empty")
 		return true
 	}
 	if id == s.NodeID {
-		log.Println("DEBUG :: Skipped scache update because the node-id was the same")
 		return true
 	}
 	return false
@@ -125,47 +116,30 @@ func (s *SharedCache) Subscribe() (err error) {
 		switch channel {
 		case SCacheChannelUpdate:
 			// publish gme.sh-scache:update <nodeid> <json>
-			log.Println("DEBUG x SCacheChannelUpdate :: Subscribe channel, payload (", channel, payload, ")")
-
 			// get node id
 			nodeID := extractID(&payload)
-			log.Println("DEBUG x SCacheChannelUpdate :: NodeID:", nodeID)
 			if s.sameID(nodeID) {
 				return
 			}
-
-			log.Println("DEBUG x SCacheChannelUpdate :: JSON:", payload)
-
 			// decode json to shortURL object
 			var sh *short.ShortURL
 			if err := json.Unmarshal([]byte(payload), &sh); err != nil {
-				log.Println("DEBUG x SCacheChannelUpdate :: S-Cache: WARN: Invalid JSON for short object received")
 				return
 			}
-
 			// save to PersistentDatabase
 			_ = s.local.UpdateCache(sh)
-			log.Println("DEBUG x SCacheChannelUpdate :: Cached short-url (by subscribe):", payload)
-
 			break
 		case SCacheChannelBreak:
 			// publish gme.sh-scache:break <nodeid> <id>
-
 			// get node id
 			nodeID := extractID(&payload)
-			log.Println("DEBUG x SCacheChannelBreak :: NodeID:", nodeID)
 			if s.sameID(nodeID) {
 				return
 			}
-
 			id := short.ShortID(payload)
-			log.Println("DEBUG x SCacheChannelBreak :: ShortID:", id)
-
 			// remove from cache
 			_ = s.local.BreakCache(&id)
 			break
-		default:
-			log.Println("WARN: Subscibed to a channel we don't know")
 		}
 	}, SCacheChannelBreak, SCacheChannelUpdate)
 	return

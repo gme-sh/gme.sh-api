@@ -1,6 +1,6 @@
-DryRedirect = true
+DryRedirect = false
 
-ExpirationCheckInterval = "10s"
+ExpirationCheckInterval = "60m"
 ExpirationDryRun = true
 
 [BlockedHosts]
@@ -18,7 +18,7 @@ ExpirationDryRun = true
 
 [WebServer]
     # Address on which the WebServer should listen
-    Addr = ":1336"
+    Addr = ":80"
 
 [Database]
     # Mongo, BBolt (embedded)

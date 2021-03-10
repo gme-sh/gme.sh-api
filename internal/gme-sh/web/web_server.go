@@ -29,6 +29,11 @@ func (ws *WebServer) Start() {
 	// logger middleware
 	app.Use(logger.New())
 
+	// / -> redirect to github
+	app.Get("/", func(ctx *fiber.Ctx) error {
+		return ctx.Redirect("https://github.com/gme-sh/gme.sh-api")
+	})
+
 	// limiter middleware
 	app.Use(limiter.New(limiter.Config{
 		Max:        30,

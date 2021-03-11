@@ -26,7 +26,7 @@ const (
  ╚═════╝ ╚═╝     ╚═╝╚══════╝ |_______/  |__/  |__/  \______/  |__/          \____/`
 
 	// Version of the backend
-	Version = "1.0.0-alpha" // semantic
+	Version = "1.0.1-alpha" // semantic
 )
 
 func main() {

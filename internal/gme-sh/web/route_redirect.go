@@ -1,7 +1,9 @@
 package web
 
 import (
+	"fmt"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/shortreq"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 )
@@ -10,18 +12,19 @@ func (ws *WebServer) fiberRouteRedirect(ctx *fiber.Ctx) (err error) {
 	id := short.ShortID(ctx.Params("id"))
 	if id.Empty() {
 		// TODO: redirect to 404?!
-		return UserErrorResponse(ctx, "empty short id")
+		return shortreq.ResponseErrEmptyID.Send(ctx)
 	}
 	// check if requested file
 	if strings.Contains(id.String(), ".") {
-		return UserErrorResponse(ctx, "requested file")
+		return shortreq.ResponseErrRequestedFile.Send(ctx)
 	}
 	// find short url
 	var sh *short.ShortURL
 	sh, err = ws.persistentDB.FindShortenedURL(&id)
 	if sh == nil || err != nil {
 		// TODO: redirect to 404?!
-		return UserErrorResponse(ctx, "short url ["+id.String()+"] not found")
+		return shortreq.ResponseErrURLNotFound.SendWithMessage(ctx,
+			fmt.Sprintf("short url [%s] not found", id.String()))
 	}
 	// check if expired
 	if sh.IsExpired() {
@@ -30,7 +33,7 @@ func (ws *WebServer) fiberRouteRedirect(ctx *fiber.Ctx) (err error) {
 		if err != nil {
 			return
 		}
-		return UserErrorResponse(ctx, "expired")
+		return shortreq.ResponseErrExpired.SendWithData(ctx, sh)
 	}
 	// add stats
 	if !sh.IsTemporary() {
@@ -40,7 +43,8 @@ func (ws *WebServer) fiberRouteRedirect(ctx *fiber.Ctx) (err error) {
 	}
 	// dry redirect (debug)
 	if ws.config.DryRedirect {
-		return SuccessMessageResponse(ctx, "would redirect to ["+sh.FullURL+"]")
+		return shortreq.ResponseOkRedirectDry.SendWithMessage(ctx,
+			fmt.Sprintf("would redirect to [%s]", sh.FullURL))
 	}
 
 	// redirect

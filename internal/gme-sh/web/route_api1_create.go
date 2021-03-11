@@ -30,16 +30,17 @@ func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 	// check url
 	if !urlRegex.MatchString(req.FullURL) {
 		log.Println("    └ 🤬 But the URL didn't match the regex")
-
+		return shortreq.ResponseErrInvalidURL.Send(ctx)
 	}
 	// parse given url
 	u, err := url.Parse(req.FullURL)
 	if err != nil {
-		return UserErrorResponse(ctx, err)
+		return shortreq.ResponseErrInvalidURL.Send(ctx)
 	}
 	// check if url is blacklisted
 	if i, b := ws.getBlockedHostLocation(u); b {
-		return UserErrorResponse(ctx, "domain is blocked (i#"+strconv.Itoa(i)+")")
+		return shortreq.ResponseErrDomainBlocked.SendWithMessage(ctx,
+			"domain is blocked (i#"+strconv.Itoa(i)+")")
 	}
 	// no custom alias set?
 	// -> generate alias
@@ -47,11 +48,11 @@ func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 		if generated := short.GenerateShortID(ws.persistentDB.ShortURLAvailable); !generated.Empty() {
 			req.PreferredAlias = generated
 		} else {
-			return ServerErrorResponse(ctx, "no generated alias available")
+			return shortreq.ResponseErrGeneratedAliasNotAvailable.Send(ctx)
 		}
 	} else {
 		if available := ws.persistentDB.ShortURLAvailable(&req.PreferredAlias); !available {
-			return UserErrorResponse(ctx, "alias not available")
+			return shortreq.ResponseErrAliasOccupied.Send(ctx)
 		}
 	}
 
@@ -77,9 +78,9 @@ func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 
 	// save to database
 	if err := ws.persistentDB.SaveShortenedURL(sh); err != nil {
-		return ServerErrorResponse(ctx, err)
+		return shortreq.ResponseErrDatabaseSave.SendWithMessage(ctx, err.Error())
 	}
 
 	log.Println("    └ 💚 Looks like it worked out")
-	return SuccessDataResponse(ctx, sh)
+	return shortreq.ResponseOkCreate.SendWithData(ctx, sh)
 }

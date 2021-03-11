@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/shortreq"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -9,7 +10,7 @@ import (
 func (ws *WebServer) fiberRouteStats(ctx *fiber.Ctx) (err error) {
 	id := short.ShortID(ctx.Params("id"))
 	if id.Empty() {
-		return UserErrorResponse(ctx, "empty short id")
+		return shortreq.ResponseErrEmptyID.Send(ctx)
 	}
 
 	var stats *short.Stats
@@ -18,5 +19,5 @@ func (ws *WebServer) fiberRouteStats(ctx *fiber.Ctx) (err error) {
 		return
 	}
 
-	return SuccessDataResponse(ctx, stats)
+	return shortreq.ResponseOkStats.SendWithData(ctx, stats)
 }

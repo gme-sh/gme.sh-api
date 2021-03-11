@@ -1,11 +1,13 @@
 package web
 
+/*
 import (
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/shortreq"
 	"github.com/gofiber/fiber/v2"
 	"log"
 )
 
+/*
 func _errResponse(ctx *fiber.Ctx, status int, err ...interface{}) error {
 	// default error message
 	message := "unspecified error"
@@ -29,6 +31,10 @@ func _errResponse(ctx *fiber.Ctx, status int, err ...interface{}) error {
 
 func UserErrorResponse(ctx *fiber.Ctx, err ...interface{}) error {
 	return _errResponse(ctx, 400, err...)
+}
+
+func UserErrorStatusResponse(ctx *fiber.Ctx, status int, err ...interface{}) error {
+	return _errResponse(ctx, status, err...)
 }
 
 func ServerErrorResponse(ctx *fiber.Ctx, err ...interface{}) error {
@@ -64,3 +70,4 @@ func SuccessMessageDataResponse(ctx *fiber.Ctx, message string, data interface{}
 		Data:    data,
 	})
 }
+*/

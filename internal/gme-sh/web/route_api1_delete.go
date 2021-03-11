@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/shortreq"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -9,7 +10,7 @@ import (
 func (ws *WebServer) fiberRouteDelete(ctx *fiber.Ctx) (err error) {
 	id := short.ShortID(ctx.Params("id"))
 	if id.Empty() {
-		return UserErrorResponse(ctx, "empty short-id")
+		return shortreq.ResponseErrEmptyID.Send(ctx)
 	}
 
 	secret := ctx.Params("secret")
@@ -17,17 +18,17 @@ func (ws *WebServer) fiberRouteDelete(ctx *fiber.Ctx) (err error) {
 	// find short url
 	sh, err := ws.persistentDB.FindShortenedURL(&id)
 	if err != nil {
-		return UserErrorResponse(ctx, err)
+		return shortreq.ResponseErrURLNotFound.SendWithMessage(ctx, err.Error())
 	}
 
 	// check if locked
 	if sh.IsLocked() {
-		return UserErrorResponse(ctx, "url is locked")
+		return shortreq.ResponseErrLocked.Send(ctx)
 	}
 
 	// compare secrets
 	if sh.Secret != secret {
-		return UserErrorResponse(ctx, "secret mismatch")
+		return shortreq.ResponseErrSecretMismatch.Send(ctx)
 	}
 
 	// delete
@@ -36,5 +37,5 @@ func (ws *WebServer) fiberRouteDelete(ctx *fiber.Ctx) (err error) {
 		return
 	}
 
-	return SuccessResponse(ctx)
+	return shortreq.ResponseOkDeleted.SendWithData(ctx, sh)
 }

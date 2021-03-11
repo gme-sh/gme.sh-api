@@ -2,6 +2,9 @@
 #  -> contains sensitive information!
 /config.toml
 
+# env
+/docker-compose.env
+
 # Built binary
 /bin
 

@@ -31,6 +31,7 @@ services:
   gmeshort:
     build: .
     restart: unless-stopped
+    tty: true
     depends_on:
       - mongo
       - redis

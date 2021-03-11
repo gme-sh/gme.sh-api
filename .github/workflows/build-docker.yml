@@ -16,5 +16,8 @@ jobs:
       - name: "📝 Checkout Code"
         uses: actions/checkout@v2
 
+      - name: "Create docker-compose.env"
+        run: mv docker-compose.example.env docker-compose.env
+
       - name: "🏗 Docker-Compose Build"
         run: docker-compose build

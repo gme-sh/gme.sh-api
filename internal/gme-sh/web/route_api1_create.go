@@ -45,7 +45,7 @@ func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 	// no custom alias set?
 	// -> generate alias
 	if req.PreferredAlias == "" {
-		if generated := short.GenerateShortID(ws.persistentDB.ShortURLAvailable); !generated.Empty() {
+		if generated := short.GenerateShortID(ws.persistentDB.ShortURLAvailable); !generated.IsEmpty() {
 			req.PreferredAlias = generated
 		} else {
 			return shortreq.ResponseErrGeneratedAliasNotAvailable.Send(ctx)
@@ -54,6 +54,11 @@ func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 		if available := ws.persistentDB.ShortURLAvailable(&req.PreferredAlias); !available {
 			return shortreq.ResponseErrAliasOccupied.Send(ctx)
 		}
+	}
+
+	// check short id
+	if !req.PreferredAlias.IsValid() {
+		return shortreq.ResponseErrInvalidID.Send(ctx)
 	}
 
 	// expiration

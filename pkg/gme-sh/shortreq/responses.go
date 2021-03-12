@@ -47,6 +47,11 @@ var (
 		StatusCode:   503,
 		Message:      "error saving",
 	}
+	ResponseErrInvalidID = &Response{
+		InternalCode: -2006,
+		StatusCode:   400,
+		Message:      "invalid id (alias)",
+	}
 
 	// DELETE
 	// ok

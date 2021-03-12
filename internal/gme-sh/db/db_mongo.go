@@ -7,7 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"time"
 )
 
@@ -81,7 +80,6 @@ func (mdb *mongoDatabase) FindShortenedURL(id *short.ShortID) (shortURL *short.S
 		return u, nil
 	}
 	result := mdb.shortURLs().FindOne(mdb.context, id.BsonFilter())
-	log.Println("-> not in cache. Result with filter", id.BsonFilter(), " (error) :", result.Err())
 	if err = result.Err(); err != nil {
 		return
 	}
@@ -153,11 +151,9 @@ func (mdb *mongoDatabase) GetLastExpirationCheck() (m *LastExpirationCheckMeta) 
 	m = &LastExpirationCheckMeta{LastCheck: time.Unix(5, 0)}
 	res := mdb.meta().FindOne(mdb.context, bson.M{"key": "last_expiration"})
 	if res.Err() != nil {
-		log.Println("GetLastExpirationCheck Err:", res.Err())
 		m.LastCheck = time.Unix(4, 0)
 	} else {
 		if err := res.Decode(m); err != nil {
-			log.Println("GetLastExpirationCheck Err:", err)
 			m.LastCheck = time.Unix(3, 0)
 		}
 	}
@@ -166,13 +162,12 @@ func (mdb *mongoDatabase) GetLastExpirationCheck() (m *LastExpirationCheckMeta) 
 
 func (mdb *mongoDatabase) UpdateLastExpirationCheck(t time.Time) {
 	m := &LastExpirationCheckMeta{LastCheck: t}
-	_, err := mdb.meta().UpdateOne(
+	_, _ = mdb.meta().UpdateOne(
 		mdb.context,
 		bson.M{"key": "last_expiration"},
 		bson.M{"$set": m},
 		options.Update().SetUpsert(true),
 	)
-	log.Println("UpdateLastExpirationCheck Err:", err)
 }
 
 /*

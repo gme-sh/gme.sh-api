@@ -9,7 +9,7 @@ import (
 // GET /api/v1/stats/{id}
 func (ws *WebServer) fiberRouteStats(ctx *fiber.Ctx) (err error) {
 	id := short.ShortID(ctx.Params("id"))
-	if id.Empty() {
+	if id.IsEmpty() {
 		return shortreq.ResponseErrEmptyID.Send(ctx)
 	}
 

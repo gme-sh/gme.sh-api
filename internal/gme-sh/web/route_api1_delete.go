@@ -9,7 +9,7 @@ import (
 // DELETE /:id/:secret
 func (ws *WebServer) fiberRouteDelete(ctx *fiber.Ctx) (err error) {
 	id := short.ShortID(ctx.Params("id"))
-	if id.Empty() {
+	if id.IsEmpty() {
 		return shortreq.ResponseErrEmptyID.Send(ctx)
 	}
 

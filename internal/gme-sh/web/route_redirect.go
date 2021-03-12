@@ -10,7 +10,7 @@ import (
 
 func (ws *WebServer) fiberRouteRedirect(ctx *fiber.Ctx) (err error) {
 	id := short.ShortID(ctx.Params("id"))
-	if id.Empty() {
+	if id.IsEmpty() {
 		// TODO: redirect to 404?!
 		return shortreq.ResponseErrEmptyID.Send(ctx)
 	}

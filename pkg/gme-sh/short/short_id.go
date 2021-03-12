@@ -3,6 +3,7 @@ package short
 import (
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
+	"regexp"
 	"strings"
 )
 
@@ -26,8 +27,26 @@ func (id *ShortID) Bytes() []byte {
 	return []byte(id.String())
 }
 
-func (id *ShortID) Empty() bool {
+func (id *ShortID) IsEmpty() bool {
 	return len(strings.TrimSpace(id.String())) <= 0
+}
+
+var (
+	shortIDPattern = `^[\w-]{1,32}$`
+	shortIDRegex   *regexp.Regexp
+)
+
+func init() {
+	var err error
+	shortIDRegex, err = regexp.Compile(shortIDPattern)
+	if err != nil {
+		log.Fatalln("error compiling pattern for short ids:", err)
+		return
+	}
+}
+
+func (id *ShortID) IsValid() bool {
+	return !id.IsEmpty() && shortIDRegex.MatchString(id.String())
 }
 
 ///////////////////////////////////////////////////////////////////////

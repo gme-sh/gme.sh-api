@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: "Build Go"
+    name: "Build Docker"
 
     runs-on: ubuntu-latest
 

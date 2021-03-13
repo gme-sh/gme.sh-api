@@ -17,7 +17,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: "Create docker-compose.env"
-        run: mv docker-compose.example.env docker-compose.env
+        run: |
+          mv docker/docker-compose.env ./docker-compose.env
+          mv docker/docker-redis-mongo.yml ./docker-compose.yml
 
       - name: "🏗 Docker-Compose Build"
         run: docker-compose build

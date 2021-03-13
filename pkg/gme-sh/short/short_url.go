@@ -3,6 +3,8 @@ package short
 import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"log"
+	"regexp"
 	"time"
 )
 
@@ -17,6 +19,27 @@ type ShortURL struct {
 
 func (u *ShortURL) String() string {
 	return fmt.Sprintf("ShortURL #%s (short) :: Long = %s | Created: %s", u.ID.String(), u.FullURL, u.CreationDate.String())
+}
+
+var (
+	protocolPattern = `^https?:\/\/((.){1,})$`
+	protocolRegex   *regexp.Regexp
+)
+
+func init() {
+	var err error
+	protocolRegex, err = regexp.Compile(protocolPattern)
+	if err != nil {
+		log.Fatalln("Error compiling protocol pattern:", err)
+	}
+}
+
+func (u *ShortURL) GetRedirectURL() (url string) {
+	url = u.FullURL
+	if !protocolRegex.MatchString(url) {
+		url = "//" + url
+	}
+	return
 }
 
 ///////////////////////////////////////////////////////////////////////

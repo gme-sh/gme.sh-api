@@ -44,9 +44,9 @@ func (ws *WebServer) fiberRouteRedirect(ctx *fiber.Ctx) (err error) {
 	// dry redirect (debug)
 	if ws.config.DryRedirect {
 		return shortreq.ResponseOkRedirectDry.SendWithMessage(ctx,
-			fmt.Sprintf("would redirect to [%s]", sh.FullURL))
+			fmt.Sprintf("would redirect to [%s]", sh.GetRedirectURL()))
 	}
 
 	// redirect
-	return ctx.Redirect(sh.FullURL, 302)
+	return ctx.Redirect(sh.GetRedirectURL(), 302)
 }

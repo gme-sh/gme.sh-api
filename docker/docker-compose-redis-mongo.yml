@@ -29,7 +29,7 @@ services:
   # see https://github.com/gme-sh/gme.sh-api
   #
   gmeshort:
-    build: ..
+    build: .
     restart: unless-stopped
     tty: true
     depends_on:

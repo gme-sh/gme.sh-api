@@ -1,0 +1,15 @@
+version: "3.4"
+
+services:
+  #
+  # Main app
+  # see https://github.com/gme-sh/gme.sh-api
+  #
+  gmeshort:
+    build: ..
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 1334:80
+    env_file:
+      - docker-compose.env

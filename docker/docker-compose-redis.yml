@@ -3,18 +3,6 @@ version: "3.4"
 services:
 
   #
-  # MongoDB is used to store the shortend URLs
-  # see https://hub.docker.com/_/mongo/
-  # and https://www.mongodb.com
-  #
-  mongo:
-    image: mongo:latest
-    restart: unless-stopped
-
-    volumes:
-    - gmeshort-mongo-data:/data/db
-
-  #
   # Redis is used for temporary stats
   # and for pub-sub use (caching)
   # see https://hub.docker.com/_/redis/
@@ -29,16 +17,14 @@ services:
   # see https://github.com/gme-sh/gme.sh-api
   #
   gmeshort:
-    build: .
+    build: ..
     restart: unless-stopped
     tty: true
     depends_on:
-      - mongo
       - redis
     ports:
       - 1334:80
     env_file:
       - docker-compose.env
-
-volumes:
-  gmeshort-mongo-data:
+    environment:
+      GME_REDIS_ADDR: "redis:6379"

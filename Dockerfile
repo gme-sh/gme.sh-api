@@ -17,5 +17,6 @@ LABEL maintainer="darmiel <hi@d2a.io>"
 
 
 FROM scratch
-COPY --from=build /go/src/app/gme-sh /
+# COPY --from=build /go/src/app/gme-sh /
+COPY --from=build /go/src/app/. /
 CMD ["/gme-sh"]

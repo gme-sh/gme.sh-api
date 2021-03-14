@@ -8,8 +8,8 @@ import (
 )
 
 type Template struct {
-	TemplateURL string
-	FullURL     string
+	TemplateURL string `json:"template_url" bson:"template_url"`
+	FullURL     string `json:"full_url" bson:"full_url"`
 	params      []string
 }
 

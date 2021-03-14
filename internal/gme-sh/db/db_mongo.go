@@ -213,7 +213,7 @@ func (mdb *mongoDatabase) FindTemplates() (templates []*tpl.Template, err error)
 
 func (mdb *mongoDatabase) SaveTemplate(t *tpl.Template) (err error) {
 	filter := bson.M{
-		"temeplate_url": t.TemplateURL,
+		"template_url": t.TemplateURL,
 	}
 	update := bson.M{
 		"$set": t,

@@ -161,6 +161,7 @@ func main() {
 		log.Fatalln("Loading templates failed:", err)
 		return
 	}
+
 	if len(templates) == 0 {
 		// default templates
 		t := &tpl.Template{
@@ -174,6 +175,7 @@ func main() {
 			log.Println("OK :: Saved dummy templatem")
 		}
 	}
+
 	for _, t := range templates {
 		t.Check()
 		t.Register(server.App)

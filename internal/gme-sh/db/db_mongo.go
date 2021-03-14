@@ -199,15 +199,14 @@ func (mdb *mongoDatabase) FindTemplates() (templates []*tpl.Template, err error)
 		return
 	}
 
-	var f *tpl.Template
 	for cursor.Next(mdb.context) {
+		var f *tpl.Template
 		err = cursor.Decode(&f)
 		if err != nil {
 			return
 		}
 		templates = append(templates, f)
 	}
-
 	return
 }
 

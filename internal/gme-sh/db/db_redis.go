@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"encoding/json"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/tpl"
 	"log"
 	"time"
 
@@ -202,4 +203,34 @@ func (*redisDB) GetLastExpirationCheck() *LastExpirationCheckMeta {
 }
 func (*redisDB) UpdateLastExpirationCheck(t time.Time) {
 
+}
+
+func (rdb *redisDB) FindTemplates() (templates []*tpl.Template, err error) {
+	cmd := rdb.client.Keys(rdb.context, "tpl::*")
+	var keys []string
+	if keys, err = cmd.Result(); err != nil {
+		return
+	}
+	for _, k := range keys {
+		var val string
+		if val, err = rdb.client.Get(rdb.context, k).Result(); err != nil {
+			return
+		}
+		t := new(tpl.Template)
+		if err = json.Unmarshal([]byte(val), t); err != nil {
+			return
+		}
+		templates = append(templates, t)
+	}
+	return
+}
+
+func (rdb *redisDB) SaveTemplate(t *tpl.Template) (err error) {
+	var data []byte
+	data, err = json.Marshal(t)
+	if err != nil {
+		return
+	}
+	err = rdb.client.Set(rdb.context, "tpl::"+t.TemplateURL, string(data), 0).Err()
+	return
 }

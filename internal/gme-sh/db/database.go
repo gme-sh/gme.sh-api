@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/tpl"
 	"log"
 	"time"
 )
@@ -13,13 +14,20 @@ type PersistentDatabase interface {
 	HealthCheck(ctx context.Context) error
 
 	// PersistentDatabase Functions
+	// ShortURL
 	SaveShortenedURL(url *short.ShortURL) (err error)
 	DeleteShortenedURL(id *short.ShortID) (err error)
 	FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error)
 	ShortURLAvailable(id *short.ShortID) (available bool)
+
+	// Expiration
 	FindExpiredURLs() ([]*short.ShortURL, error)
 	GetLastExpirationCheck() *LastExpirationCheckMeta
 	UpdateLastExpirationCheck(t time.Time)
+
+	// Template
+	FindTemplates() (tpl []*tpl.Template, err error)
+	SaveTemplate(t *tpl.Template) (err error)
 }
 
 // StatsDatabase functions

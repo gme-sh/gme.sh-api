@@ -5,6 +5,7 @@ import (
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/web"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/tpl"
 	"github.com/gofiber/adaptor/v2"
 	"log"
 	"os"
@@ -152,6 +153,32 @@ func main() {
 	server := web.NewWebServer(persistentDB, statsDB, cfg)
 	// stats
 	server.App.Get("/health", adaptor.HTTPHandler(health.Handler()))
+
+	/// Templates
+	// find templates
+	templates, err := persistentDB.FindTemplates()
+	if err != nil {
+		log.Fatalln("Loading templates failed:", err)
+		return
+	}
+	if len(templates) == 0 {
+		// default templates
+		t := &tpl.Template{
+			TemplateURL: "/dummy/:param",
+			FullURL:     "https://example.com/:param",
+		}
+		templates = []*tpl.Template{t}
+		if err := persistentDB.SaveTemplate(t); err != nil {
+			log.Println("WARN :: Could not save dummy template:", err)
+		} else {
+			log.Println("OK :: Saved dummy templatem")
+		}
+	}
+	for _, t := range templates {
+		t.Check()
+		t.Register(server.App)
+	}
+	///
 	go server.Start()
 	////
 

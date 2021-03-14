@@ -31,6 +31,7 @@ ExpirationDryRun = true
         Database = "gme-sh"
         ShortURLCollection = "short-urls"
         MetaCollection = "meta"
+        TplCollection = "tpl"
 
     # Temporary Database
     [Database.Redis]
@@ -44,6 +45,8 @@ ExpirationDryRun = true
         Path = "dbgoesbrr.db"
         FileMode = 0666
         ShortedURLsBucketName = "stonks-urls"
+        MetaBucketName = "meta"
+        TplBucketName = "tpl"
 
     # Persistent Database
     # NOT IMPLEMENTED (yet)

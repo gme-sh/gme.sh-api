@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/tpl"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,6 +19,7 @@ type mongoDatabase struct {
 	database           string
 	shortURLCollection string
 	metaCollection     string
+	tplCollection      string
 }
 
 var updateOptions = options.Update().SetUpsert(true)
@@ -45,6 +47,7 @@ func NewMongoDatabase(cfg *config.MongoConfig, cache DBCache) (db PersistentData
 		database:           cfg.Database,
 		shortURLCollection: cfg.ShortURLCollection,
 		metaCollection:     cfg.MetaCollection,
+		tplCollection:      cfg.TplCollection,
 		cache:              cache,
 	}, nil
 }
@@ -66,6 +69,10 @@ func (mdb *mongoDatabase) shortURLs() *mongo.Collection {
 
 func (mdb *mongoDatabase) meta() *mongo.Collection {
 	return mdb.client.Database(mdb.database).Collection(mdb.metaCollection)
+}
+
+func (mdb *mongoDatabase) tpl() *mongo.Collection {
+	return mdb.client.Database(mdb.database).Collection(mdb.tplCollection)
 }
 
 /*
@@ -180,4 +187,40 @@ func (mdb *mongoDatabase) ShortURLAvailable(id *short.ShortID) bool {
 		return false
 	}
 	return shortURLAvailable(mdb, id)
+}
+
+// TPL
+func (mdb *mongoDatabase) FindTemplates() (templates []*tpl.Template, err error) {
+	filter := bson.M{}
+
+	var cursor *mongo.Cursor
+	cursor, err = mdb.tpl().Find(mdb.context, filter)
+	if err != nil {
+		return
+	}
+
+	var f *tpl.Template
+	for cursor.Next(mdb.context) {
+		err = cursor.Decode(&f)
+		if err != nil {
+			return
+		}
+		templates = append(templates, f)
+	}
+
+	return
+}
+
+func (mdb *mongoDatabase) SaveTemplate(t *tpl.Template) (err error) {
+	filter := bson.M{
+		"temeplate_url": t.TemplateURL,
+	}
+	update := bson.M{
+		"$set": t,
+	}
+	_, err = mdb.tpl().UpdateOne(mdb.context,
+		filter,
+		update,
+		options.Update().SetUpsert(true))
+	return
 }

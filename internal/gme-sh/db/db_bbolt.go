@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/short"
+	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/tpl"
 	"go.etcd.io/bbolt"
 	"log"
 	"time"
@@ -16,6 +17,7 @@ type bboltDatabase struct {
 	cache                 DBCache
 	shortedURLsBucketName []byte
 	metaBucketName        []byte
+	tplBucketName         []byte
 }
 
 // NewBBoltDatabase -> Create new BBoltDatabase
@@ -32,7 +34,8 @@ func NewBBoltDatabase(cfg *config.BBoltConfig, cache DBCache) (bbdb PersistentDa
 		database:              db,
 		cache:                 cache,
 		shortedURLsBucketName: []byte(cfg.ShortedURLsBucketName),
-		metaBucketName:        []byte("meta"), // TODO: config
+		metaBucketName:        []byte(cfg.MetaBucketName),
+		tplBucketName:         []byte(cfg.TplBucketName),
 	}
 	return
 }
@@ -218,4 +221,42 @@ func (bdb *bboltDatabase) UpdateLastExpirationCheck(t time.Time) {
 	} else {
 		log.Println("OK updating last expiration for bbolt:", err)
 	}
+}
+
+func (bdb *bboltDatabase) FindTemplates() (templates []*tpl.Template, err error) {
+	templates = []*tpl.Template{}
+	err = bdb.database.View(func(tx *bbolt.Tx) (e error) {
+		bucket := tx.Bucket(bdb.tplBucketName)
+		if bucket == nil {
+			return nil
+		}
+		e = bucket.ForEach(func(_, v []byte) error {
+			var t = new(tpl.Template)
+			if err := json.Unmarshal(v, t); err != nil {
+				return err
+			}
+			templates = append(templates, t)
+			return nil
+		})
+		return
+	})
+	return
+}
+
+func (bdb *bboltDatabase) SaveTemplate(t *tpl.Template) (err error) {
+	err = bdb.database.Update(func(tx *bbolt.Tx) (err error) {
+		var bucket *bbolt.Bucket
+		bucket, err = tx.CreateBucketIfNotExists(bdb.tplBucketName)
+		if err != nil {
+			return
+		}
+		var data []byte
+		data, err = json.Marshal(t)
+		if err != nil {
+			return
+		}
+		err = bucket.Put([]byte(t.TemplateURL), data)
+		return
+	})
+	return
 }

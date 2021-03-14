@@ -5,7 +5,6 @@ import (
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/config"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/db"
 	"github.com/gme-sh/gme.sh-api/internal/gme-sh/web"
-	"github.com/gme-sh/gme.sh-api/pkg/gme-sh/tpl"
 	"github.com/gofiber/adaptor/v2"
 	"log"
 	"os"
@@ -154,10 +153,18 @@ func main() {
 	// stats
 	server.App.Get("/health", adaptor.HTTPHandler(health.Handler()))
 
-	// Templates
-	t := tpl.NewTemplate("/gh/:name", "https://github.com/:name")
-	t.Register(server.App)
-
+	/// Templates
+	// find templates
+	templates, err := persistentDB.FindTemplates()
+	if err != nil {
+		log.Fatalln("Loading templates failed:", err)
+		return
+	}
+	for _, t := range templates {
+		t.Check()
+		t.Register(server.App)
+	}
+	///
 	go server.Start()
 	////
 

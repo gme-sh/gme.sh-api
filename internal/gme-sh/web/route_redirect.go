@@ -33,7 +33,7 @@ func (ws *WebServer) fiberRouteRedirect(ctx *fiber.Ctx) (err error) {
 		if err != nil {
 			return
 		}
-		return shortreq.ResponseErrExpired.SendWithData(ctx, sh)
+		return shortreq.ResponseErrExpired.Send(ctx)
 	}
 	// add stats
 	if !sh.IsTemporary() {

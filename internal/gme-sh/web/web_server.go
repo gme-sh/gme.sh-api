@@ -83,7 +83,9 @@ func (ws *WebServer) Start() {
 
 // NewWebServer returns a new WebServer object (reference)
 func NewWebServer(persistentDB db.PersistentDatabase, statsDB db.StatsDatabase, cfg *config.Config) *WebServer {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		ProxyHeader: "X-Forwarded-For",
+	})
 	return &WebServer{
 		persistentDB: persistentDB,
 		statsDB:      statsDB,

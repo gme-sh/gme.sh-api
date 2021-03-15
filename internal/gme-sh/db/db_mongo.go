@@ -52,15 +52,6 @@ func NewMongoDatabase(cfg *config.MongoConfig, cache DBCache) (db PersistentData
 	}, nil
 }
 
-func (*mongoDatabase) ServiceName() string {
-	return "MongoDB"
-}
-
-func (mdb *mongoDatabase) HealthCheck(ctx context.Context) (err error) {
-	err = mdb.client.Ping(ctx, nil)
-	return
-}
-
 ////
 
 func (mdb *mongoDatabase) shortURLs() *mongo.Collection {
@@ -77,31 +68,24 @@ func (mdb *mongoDatabase) tpl() *mongo.Collection {
 
 /*
  * ==================================================================================================
- *                            P E R M A N E N T  D A T A B A S E
+ *                          D E F A U L T   I M P L E M E N T A T I O N S
  * ==================================================================================================
  */
 
-func (mdb *mongoDatabase) FindShortenedURL(id *short.ShortID) (shortURL *short.ShortURL, err error) {
-	// At first, try to load the object from the cache
-	if u := mdb.cache.GetShortURL(id); u != nil {
-		return u, nil
-	}
-	result := mdb.shortURLs().FindOne(mdb.context, id.BsonFilter())
-	if err = result.Err(); err != nil {
-		return
-	}
-	// If the object was found in the MongoDB database, try to decode it to shortURL
-	err = result.Decode(&shortURL)
+func (*mongoDatabase) ServiceName() string {
+	return "MongoDB"
+}
 
-	// Now we cache the object to spare the MongoDB database.
-	// The object is removed from the cache after 10 minutes, or by the BreakCache method,
-	// which is called among other things when the hint comes via Redis Pub-Sub
-	if err == nil {
-		err = mdb.cache.UpdateCache(shortURL)
-	}
-
+func (mdb *mongoDatabase) HealthCheck(ctx context.Context) (err error) {
+	err = mdb.client.Ping(ctx, nil)
 	return
 }
+
+/*
+ * ==================================================================================================
+ *                            P E R M A N E N T  D A T A B A S E
+ * ==================================================================================================
+ */
 
 func (mdb *mongoDatabase) SaveShortenedURL(short *short.ShortURL) (err error) {
 	_, err = mdb.shortURLs().UpdateOne(
@@ -127,6 +111,41 @@ func (mdb *mongoDatabase) DeleteShortenedURL(id *short.ShortID) (err error) {
 	}
 	return
 }
+
+func (mdb *mongoDatabase) FindShortenedURL(id *short.ShortID) (shortURL *short.ShortURL, err error) {
+	// At first, try to load the object from the cache
+	if u := mdb.cache.GetShortURL(id); u != nil {
+		return u, nil
+	}
+	result := mdb.shortURLs().FindOne(mdb.context, id.BsonFilter())
+	if err = result.Err(); err != nil {
+		return
+	}
+	// If the object was found in the MongoDB database, try to decode it to shortURL
+	err = result.Decode(&shortURL)
+
+	// Now we cache the object to spare the MongoDB database.
+	// The object is removed from the cache after 10 minutes, or by the BreakCache method,
+	// which is called among other things when the hint comes via Redis Pub-Sub
+	if err == nil {
+		err = mdb.cache.UpdateCache(shortURL)
+	}
+
+	return
+}
+
+func (mdb *mongoDatabase) ShortURLAvailable(id *short.ShortID) bool {
+	if u := mdb.cache.GetShortURL(id); u != nil {
+		return false
+	}
+	return shortURLAvailable(mdb, id)
+}
+
+/*
+ * ==================================================================================================
+ *                          E X P I R A T I O N   I M P L E M E N T A T I O N S
+ * ==================================================================================================
+ */
 
 func (mdb *mongoDatabase) FindExpiredURLs() (res []*short.ShortURL, err error) {
 	filter := bson.M{
@@ -179,17 +198,10 @@ func (mdb *mongoDatabase) UpdateLastExpirationCheck(t time.Time) {
 
 /*
  * ==================================================================================================
- *                          D E F A U L T   I M P L E M E N T A T I O N S
+ *                          T E M P L A T E   I M P L E M E N T A T I O N S
  * ==================================================================================================
  */
-func (mdb *mongoDatabase) ShortURLAvailable(id *short.ShortID) bool {
-	if u := mdb.cache.GetShortURL(id); u != nil {
-		return false
-	}
-	return shortURLAvailable(mdb, id)
-}
 
-// TPL
 func (mdb *mongoDatabase) FindTemplates() (templates []*tpl.Template, err error) {
 	filter := bson.M{}
 

@@ -10,45 +10,52 @@ import (
 
 // PersistentDatabase functions
 type PersistentDatabase interface {
+	// HealthChecked
 	ServiceName() string
-	HealthCheck(ctx context.Context) error
+	HealthCheck(context.Context) error
 
 	// PersistentDatabase Functions
 	// ShortURL
-	SaveShortenedURL(url *short.ShortURL) (err error)
-	DeleteShortenedURL(id *short.ShortID) (err error)
-	FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error)
-	ShortURLAvailable(id *short.ShortID) (available bool)
+	SaveShortenedURL(*short.ShortURL) error
+	DeleteShortenedURL(*short.ShortID) error
+	FindShortenedURL(*short.ShortID) (*short.ShortURL, error)
+	ShortURLAvailable(*short.ShortID) bool
 
 	// Expiration
 	FindExpiredURLs() ([]*short.ShortURL, error)
 	GetLastExpirationCheck() *LastExpirationCheckMeta
-	UpdateLastExpirationCheck(t time.Time)
+	UpdateLastExpirationCheck(time.Time)
 
 	// Template
-	FindTemplates() (tpl []*tpl.Template, err error)
-	SaveTemplate(t *tpl.Template) (err error)
+	FindTemplates() ([]*tpl.Template, error)
+	SaveTemplate(*tpl.Template) error
 }
 
 // StatsDatabase functions
 type StatsDatabase interface {
+	// HealthChecked
 	ServiceName() string
-	HealthCheck(ctx context.Context) error
+	HealthCheck(context.Context) error
 
 	// StatsDatabase Functions
-	FindStats(id *short.ShortID) (stats *short.Stats, err error)
-	AddStats(id *short.ShortID) (err error)
-	DeleteStats(id *short.ShortID) (err error)
+	FindStats(*short.ShortID) (*short.Stats, error)
+	AddStats(*short.ShortID) error
+	DeleteStats(*short.ShortID) error
 }
 
 type PubSub interface {
+	// HealthChecked
 	ServiceName() string
-	HealthCheck(ctx context.Context) error
+	HealthCheck(context.Context) error
 
-	Heartbeat() (err error)
-	Publish(channel, msg string) (err error)
-	Subscribe(c func(channel, payload string), channels ...string) (err error)
-	Close() (err error)
+	Publish(string, string) error
+	Subscribe(func(string, string), ...string) error
+	Close() error
+}
+
+type HealthChecked interface {
+	ServiceName() string
+	HealthCheck(context.Context) error
 }
 
 // Must -> Don't use database, if some error occurred

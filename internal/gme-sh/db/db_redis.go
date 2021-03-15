@@ -39,17 +39,6 @@ func newRedisDB(cfg *config.RedisConfig) (*redisDB, error) {
 	}, nil
 }
 
-func (*redisDB) ServiceName() string {
-	return "Redis"
-}
-
-func (rdb *redisDB) HealthCheck(ctx context.Context) (err error) {
-	err = rdb.client.Ping(ctx).Err()
-	return
-}
-
-////
-
 // NewRedisDatabase -> Use Redis as backend
 func NewRedisDatabase(cfg *config.RedisConfig) (PersistentDatabase, error) {
 	return newRedisDB(cfg)
@@ -65,9 +54,45 @@ func NewRedisStats(cfg *config.RedisConfig) (StatsDatabase, error) {
 
 /*
  * ==================================================================================================
+ *                          D E F A U L T   I M P L E M E N T A T I O N S
+ * ==================================================================================================
+ */
+
+func (*redisDB) ServiceName() string {
+	return "Redis"
+}
+
+func (rdb *redisDB) HealthCheck(ctx context.Context) (err error) {
+	err = rdb.client.Ping(ctx).Err()
+	return
+}
+
+/*
+ * ==================================================================================================
  *                            P E R M A N E N T  D A T A B A S E
  * ==================================================================================================
  */
+
+func (rdb *redisDB) SaveShortenedURL(short *short.ShortURL) (err error) {
+	var data []byte
+	data, err = json.Marshal(short)
+	if err != nil {
+		return
+	}
+	var exp time.Duration
+	if short.ExpirationDate != nil {
+		exp = short.ExpirationDate.Sub(time.Now())
+	} else {
+		exp = redis.KeepTTL
+	}
+	err = rdb.client.Set(rdb.context, short.ID.RedisKey(), string(data), exp).Err()
+	return
+}
+
+func (rdb *redisDB) DeleteShortenedURL(id *short.ShortID) (err error) {
+	err = rdb.client.Del(rdb.context, id.RedisKey()).Err()
+	return
+}
 
 func (rdb *redisDB) FindShortenedURL(id *short.ShortID) (res *short.ShortURL, err error) {
 	data := rdb.client.Get(rdb.context, id.RedisKey())
@@ -79,23 +104,64 @@ func (rdb *redisDB) FindShortenedURL(id *short.ShortID) (res *short.ShortURL, er
 	return
 }
 
-func (rdb *redisDB) SaveShortenedURL(short *short.ShortURL) (err error) {
+func (rdb *redisDB) ShortURLAvailable(id *short.ShortID) bool {
+	return shortURLAvailable(rdb, id)
+}
+
+/*
+ * ==================================================================================================
+ *                          E X P I R A T I O N   I M P L E M E N T A T I O N S
+ * ==================================================================================================
+ */
+
+func (*redisDB) FindExpiredURLs() (res []*short.ShortURL, err error) {
+	return []*short.ShortURL{}, nil
+}
+
+func (*redisDB) GetLastExpirationCheck() *LastExpirationCheckMeta {
+	return &LastExpirationCheckMeta{
+		LastCheck: time.Now(),
+	}
+}
+
+func (*redisDB) UpdateLastExpirationCheck(t time.Time) {
+	return
+}
+
+/*
+ * ==================================================================================================
+ *                          T E M P L A T E   I M P L E M E N T A T I O N S
+ * ==================================================================================================
+ */
+
+func (rdb *redisDB) FindTemplates() (templates []*tpl.Template, err error) {
+	cmd := rdb.client.Keys(rdb.context, "tpl::*")
+	var keys []string
+	if keys, err = cmd.Result(); err != nil {
+		return
+	}
+	for _, k := range keys {
+		var val string
+		if val, err = rdb.client.Get(rdb.context, k).Result(); err != nil {
+			return
+		}
+		t := new(tpl.Template)
+		if err = json.Unmarshal([]byte(val), t); err != nil {
+			return
+		}
+		templates = append(templates, t)
+	}
+	return
+}
+
+func (rdb *redisDB) SaveTemplate(t *tpl.Template) (err error) {
 	var data []byte
-	data, err = json.Marshal(short)
+	data, err = json.Marshal(t)
 	if err != nil {
 		return
 	}
-	err = rdb.client.Set(rdb.context, short.ID.RedisKey(), string(data), redis.KeepTTL).Err()
+	err = rdb.client.Set(rdb.context, "tpl::"+t.TemplateURL, string(data), 0).Err()
 	return
-}
-
-func (rdb *redisDB) DeleteShortenedURL(id *short.ShortID) (err error) {
-	err = rdb.client.Del(rdb.context, id.RedisKey()).Err()
-	return
-}
-
-func (rdb *redisDB) ShortURLAvailable(id *short.ShortID) bool {
-	return shortURLAvailable(rdb, id)
 }
 
 /*
@@ -158,19 +224,6 @@ func (rdb *redisDB) DeleteStats(id *short.ShortID) (err error) {
  * ==================================================================================================
  */
 
-func (rdb *redisDB) Heartbeat() (err error) {
-	err = rdb.client.Set(rdb.context, "heartbeat", 1, 1*time.Second).Err()
-	return
-}
-
-func (rdb *redisDB) Close() (err error) {
-	if rdb.ps == nil {
-		return
-	}
-	err = rdb.ps.Close()
-	return
-}
-
 func (rdb *redisDB) Publish(channel, msg string) (err error) {
 	err = rdb.client.Publish(rdb.context, channel, msg).Err()
 	return
@@ -191,46 +244,10 @@ func (rdb *redisDB) Subscribe(c func(channel, payload string), channels ...strin
 	return rdb.Subscribe(c, channels...)
 }
 
-// TODO: Allan, please implement this!
-func (*redisDB) FindExpiredURLs() (res []*short.ShortURL, err error) {
-	return []*short.ShortURL{}, nil
-}
-
-func (*redisDB) GetLastExpirationCheck() *LastExpirationCheckMeta {
-	return &LastExpirationCheckMeta{
-		LastCheck: time.Unix(5, 0),
-	}
-}
-func (*redisDB) UpdateLastExpirationCheck(t time.Time) {
-
-}
-
-func (rdb *redisDB) FindTemplates() (templates []*tpl.Template, err error) {
-	cmd := rdb.client.Keys(rdb.context, "tpl::*")
-	var keys []string
-	if keys, err = cmd.Result(); err != nil {
+func (rdb *redisDB) Close() (err error) {
+	if rdb.ps == nil {
 		return
 	}
-	for _, k := range keys {
-		var val string
-		if val, err = rdb.client.Get(rdb.context, k).Result(); err != nil {
-			return
-		}
-		t := new(tpl.Template)
-		if err = json.Unmarshal([]byte(val), t); err != nil {
-			return
-		}
-		templates = append(templates, t)
-	}
-	return
-}
-
-func (rdb *redisDB) SaveTemplate(t *tpl.Template) (err error) {
-	var data []byte
-	data, err = json.Marshal(t)
-	if err != nil {
-		return
-	}
-	err = rdb.client.Set(rdb.context, "tpl::"+t.TemplateURL, string(data), 0).Err()
+	err = rdb.ps.Close()
 	return
 }

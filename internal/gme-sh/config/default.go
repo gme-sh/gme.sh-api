@@ -17,7 +17,7 @@ func CreateDefault() (err error) {
 		BlockedHosts: &BlockedHosts{
 			Hosts: []string{"gme.sh"},
 		},
-		ExpirationCheckInterval: duration(int(60 * time.Minute)),
+		ExpirationCheckInterval: duration{5 * time.Minute},
 		ExpirationDryRun:        false,
 		Backends: &BackendConfig{
 			PersistentBackend: "Mongo",

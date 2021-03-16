@@ -15,6 +15,16 @@ type Config struct {
 	WebServer               *WebServerConfig
 }
 
+type DummyConfig struct {
+	DryRedirect             bool          `env:"DRY_REDIRECT"`
+	BlockedHosts            *BlockedHosts `env:"BLOCKED_HOSTS"`
+	ExpirationCheckInterval string        `env:"EXPIRATION_CHECK_INTERVAL"`
+	ExpirationDryRun        bool          `env:"EXPIRATION_DRY_RUN"`
+	Backends                *BackendConfig
+	Database                *DatabaseConfig
+	WebServer               *WebServerConfig
+}
+
 type BackendConfig struct {
 	PersistentBackend string `env:"PERSISTENT_BACKEND"`
 	StatsBackend      string `env:"STATS_BACKEND"`

@@ -5,19 +5,18 @@ import (
 	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"log"
-	"time"
 )
 
 // CreateDefault -> create default config
 func CreateDefault() (err error) {
 	var buf bytes.Buffer
 	e := toml.NewEncoder(&buf)
-	err = e.Encode(Config{
+	err = e.Encode(DummyConfig{
 		DryRedirect: false,
 		BlockedHosts: &BlockedHosts{
 			Hosts: []string{"gme.sh"},
 		},
-		ExpirationCheckInterval: duration{5 * time.Minute},
+		ExpirationCheckInterval: "60m",
 		ExpirationDryRun:        false,
 		Backends: &BackendConfig{
 			PersistentBackend: "Mongo",
@@ -34,7 +33,7 @@ func CreateDefault() (err error) {
 				TplCollection:      "tpl",
 			},
 			Redis: &RedisConfig{
-				Addr:     "localhost",
+				Addr:     "localhost:6379",
 				Password: "",
 				DB:       0,
 			},
@@ -53,7 +52,9 @@ func CreateDefault() (err error) {
 				TablePrefix: "stonks_",
 			},
 		},
-		WebServer: nil,
+		WebServer: &WebServerConfig{
+			Addr: ":80",
+		},
 	})
 	if err != nil {
 		log.Fatalln("Error encoding default config:", err)

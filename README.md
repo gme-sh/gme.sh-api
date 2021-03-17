@@ -48,3 +48,10 @@ Start it
 ```bash
 $ docker-compose up [-d]
 ```
+
+## Shortcut (iOS) <img align="right" alt="shortcut-logo" src="https://help.apple.com/assets/5E8CEA35094622DF10489984/5E8CEA42094622DF1048998D/en_US/18c714c61bfdebca44fe6989f0a2511d.png" height="64px" width="64px">
+It is also very easy to shorten URLs via shortcuts on iOS. You can find a ready shortcut version here:
+> https://www.icloud.com/shortcuts/8ff6f9987e084ce29b2c37dacba236e8
+
+* Either the shortcut can be opened manually, it will then ask for the long URL, and then the shortened URL will be saved to the clipboard
+* or when a URL is shared, "gme.sh" now appears in the share menu

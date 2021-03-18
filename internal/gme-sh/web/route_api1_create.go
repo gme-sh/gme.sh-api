@@ -15,7 +15,7 @@ var urlRegex *regexp.Regexp
 
 func init() {
 	var err error
-	urlRegex, err = regexp.Compile("^(https?://)?((([\\da-z.-]+)\\.([a-z.]{2,6}))|[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})(:[0-9]+)?([/\\w .-]*)/?([/\\w .-]*)/?(([?&]).+?(=.+?)?)*$")
+	urlRegex, err = regexp.Compile(`^(https?://)?((([\dA-Za-z.-]+)\.([a-z.]{2,6}))|[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})(:[0-9]+)?/?(.*)$`)
 	if err != nil {
 		log.Fatalln("error compiling regex:", err)
 	}

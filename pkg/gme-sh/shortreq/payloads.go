@@ -7,3 +7,8 @@ type CreateShortURLPayload struct {
 	PreferredAlias     short.ShortID `json:"preferred_alias"`
 	ExpireAfterSeconds int           `json:"expire_after_seconds"`
 }
+
+type UpdatePoolPayload struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+}

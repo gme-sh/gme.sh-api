@@ -20,6 +20,7 @@ type mongoDatabase struct {
 	shortURLCollection string
 	metaCollection     string
 	tplCollection      string
+	poolCollection     string
 }
 
 var updateOptions = options.Update().SetUpsert(true)
@@ -48,6 +49,7 @@ func NewMongoDatabase(cfg *config.MongoConfig, cache DBCache) (db PersistentData
 		shortURLCollection: cfg.ShortURLCollection,
 		metaCollection:     cfg.MetaCollection,
 		tplCollection:      cfg.TplCollection,
+		poolCollection:     cfg.PoolCollection,
 		cache:              cache,
 	}, nil
 }
@@ -64,6 +66,9 @@ func (mdb *mongoDatabase) meta() *mongo.Collection {
 
 func (mdb *mongoDatabase) tpl() *mongo.Collection {
 	return mdb.client.Database(mdb.database).Collection(mdb.tplCollection)
+}
+func (mdb *mongoDatabase) pool() *mongo.Collection {
+	return mdb.client.Database(mdb.database).Collection(mdb.poolCollection)
 }
 
 /*
@@ -230,6 +235,39 @@ func (mdb *mongoDatabase) SaveTemplate(t *tpl.Template) (err error) {
 		"$set": t,
 	}
 	_, err = mdb.tpl().UpdateOne(mdb.context,
+		filter,
+		update,
+		options.Update().SetUpsert(true))
+	return
+}
+
+/*
+ * ==================================================================================================
+ *                             P O O L   I M P L E M E N T A T I O N S
+ * ==================================================================================================
+ */
+
+func (mdb *mongoDatabase) FindPool(id *short.PoolID) (pool *short.Pool, err error) {
+	filter := bson.M{
+		"pool_id": id.String(),
+	}
+	cursor := mdb.pool().FindOne(mdb.context, filter)
+	if err = cursor.Err(); err != nil {
+		return
+	}
+	pool = new(short.Pool)
+	err = cursor.Decode(pool)
+	return
+}
+
+func (mdb *mongoDatabase) SavePool(pool *short.Pool) (err error) {
+	filter := bson.M{
+		"pool_id": pool.ID.String(),
+	}
+	update := bson.M{
+		"$set": pool,
+	}
+	_, err = mdb.pool().UpdateOne(mdb.context,
 		filter,
 		update,
 		options.Update().SetUpsert(true))

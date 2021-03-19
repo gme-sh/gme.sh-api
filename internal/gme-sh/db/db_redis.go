@@ -251,3 +251,28 @@ func (rdb *redisDB) Close() (err error) {
 	err = rdb.ps.Close()
 	return
 }
+
+/*
+ * ==================================================================================================
+ *                             P O O L   I M P L E M E N T A T I O N S
+ * ==================================================================================================
+ */
+
+func (rdb *redisDB) FindPool(id *short.PoolID) (pool *short.Pool, err error) {
+	var cmd *redis.StringCmd
+	if cmd = rdb.client.Get(rdb.context, "pool::"+id.String()); cmd.Err() != nil {
+		return nil, cmd.Err()
+	}
+	pool = new(short.Pool)
+	err = json.Unmarshal([]byte(cmd.String()), pool)
+	return
+}
+
+func (rdb *redisDB) SavePool(pool *short.Pool) (err error) {
+	var data []byte
+	if data, err = json.Marshal(pool); err != nil {
+		return
+	}
+	err = rdb.client.Set(rdb.context, "pool::"+pool.ID.String(), string(data), redis.KeepTTL).Err()
+	return
+}

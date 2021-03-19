@@ -52,6 +52,7 @@ type MongoConfig struct {
 	ShortURLCollection string `env:"MDB_COLLECTION_SHORT_URLS"`
 	MetaCollection     string `env:"MDB_COLLECTION_META"`
 	TplCollection      string `env:"MDB_COLLECTION_TPL"`
+	PoolCollection     string `env:"MDB_POOL_COLLECTION"`
 }
 
 // RedisConfig -> Config for Redis implementation
@@ -68,6 +69,7 @@ type BBoltConfig struct {
 	ShortedURLsBucketName string      `env:"BBOLT_BUCKET_SHORT_URLS"`
 	MetaBucketName        string      `env:"BBOLT_BUCKET_META"`
 	TplBucketName         string      `env:"BBOLT_BUCKET_TPL"`
+	PoolBucketName        string      `env:"BBOLT_BUCKET_POOL"`
 }
 
 // MariaConfig -> Config for Maria Imlementation

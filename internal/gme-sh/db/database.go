@@ -29,6 +29,10 @@ type PersistentDatabase interface {
 	// Template
 	FindTemplates() ([]*tpl.Template, error)
 	SaveTemplate(*tpl.Template) error
+
+	// Pool
+	FindPool(*short.PoolID) (*short.Pool, error)
+	SavePool(*short.Pool) error
 }
 
 // StatsDatabase functions

@@ -18,6 +18,7 @@ type bboltDatabase struct {
 	shortedURLsBucketName []byte
 	metaBucketName        []byte
 	tplBucketName         []byte
+	poolBucketName        []byte
 }
 
 // NewBBoltDatabase -> Create new BBoltDatabase
@@ -36,6 +37,7 @@ func NewBBoltDatabase(cfg *config.BBoltConfig, cache DBCache) (bbdb PersistentDa
 		shortedURLsBucketName: []byte(cfg.ShortedURLsBucketName),
 		metaBucketName:        []byte(cfg.MetaBucketName),
 		tplBucketName:         []byte(cfg.TplBucketName),
+		poolBucketName:        []byte(cfg.PoolBucketName),
 	}
 	return
 }
@@ -253,6 +255,46 @@ func (bdb *bboltDatabase) SaveTemplate(t *tpl.Template) (err error) {
 			return
 		}
 		err = bucket.Put([]byte(t.TemplateURL), data)
+		return
+	})
+	return
+}
+
+/*
+ * ==================================================================================================
+ *                             P O O L   I M P L E M E N T A T I O N S
+ * ==================================================================================================
+ */
+
+func (bdb *bboltDatabase) FindPool(id *short.PoolID) (pool *short.Pool, err error) {
+	err = bdb.database.View(func(tx *bbolt.Tx) (err error) {
+		bucket := tx.Bucket(bdb.poolBucketName)
+		if bucket == nil {
+			return
+		}
+		res := bucket.Get(id.Bytes())
+		if res == nil {
+			return
+		}
+		pool = new(short.Pool)
+		err = json.Unmarshal(res, pool)
+		return
+	})
+	return
+}
+
+func (bdb *bboltDatabase) SavePool(pool *short.Pool) (err error) {
+	err = bdb.database.Update(func(tx *bbolt.Tx) (err error) {
+		var bucket *bbolt.Bucket
+		bucket, err = tx.CreateBucketIfNotExists(bdb.poolBucketName)
+		if err != nil {
+			return
+		}
+		var val []byte
+		if val, err = json.Marshal(pool); err != nil {
+			return
+		}
+		err = bucket.Put(pool.ID.Bytes(), val)
 		return
 	})
 	return

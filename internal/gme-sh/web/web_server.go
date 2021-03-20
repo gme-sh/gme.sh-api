@@ -71,6 +71,10 @@ func (ws *WebServer) Start() {
 	// Used to retrieve stats for a short url
 	app.Get("/stats/:id", ws.fiberRouteStats)
 
+	// POOL
+	app.Get("/pool/:id/:secret", ws.fiberRoutePoolGet)
+	app.Post("/pool/:id/:secret", ws.fiberRoutePoolUpdate)
+
 	// GET /{id}
 	// Used for redirection to long url
 	app.Get("/:id", ws.fiberRouteRedirect)

@@ -6,20 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"log"
 	"net/url"
-	"regexp"
 	"strconv"
 	"time"
 )
-
-var urlRegex *regexp.Regexp
-
-func init() {
-	var err error
-	urlRegex, err = regexp.Compile(`^(https?://)?((([\dA-Za-z.-]+)\.([a-z.]{2,6}))|[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})(:[0-9]+)?/?(.*)$`)
-	if err != nil {
-		log.Fatalln("error compiling regex:", err)
-	}
-}
 
 func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 	req := new(shortreq.CreateShortURLPayload)
@@ -28,7 +17,7 @@ func (ws *WebServer) fiberRouteCreate(ctx *fiber.Ctx) (err error) {
 		return
 	}
 	// check url
-	if !urlRegex.MatchString(req.FullURL) {
+	if !shortreq.UrlRegex.MatchString(req.FullURL) {
 		log.Println("    └ 🤬 But the URL didn't match the regex")
 		return shortreq.ResponseErrInvalidURL.Send(ctx)
 	}

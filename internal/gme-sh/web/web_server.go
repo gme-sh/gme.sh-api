@@ -31,7 +31,11 @@ func (ws *WebServer) Start() {
 
 	// / -> redirect to github
 	app.Get("/", func(ctx *fiber.Ctx) error {
-		return ctx.Redirect("https://github.com/gme-sh/gme.sh-api")
+		u := ws.config.WebServer.DefaultURL
+		if u == "" {
+			u = "https://github.com/gme-sh/gme.sh-api"
+		}
+		return ctx.Redirect(u)
 	})
 
 	// limiter middleware

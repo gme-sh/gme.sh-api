@@ -18,7 +18,8 @@ ExpirationDryRun = true
 
 [WebServer]
     # Address on which the WebServer should listen
-    Addr = ":80"
+    Addr = ":80
+    DefaultURL = "https://github.com/gme-sh/gme.sh-api"
 
 [Database]
     # Mongo, BBolt (embedded)

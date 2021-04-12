@@ -53,7 +53,8 @@ func CreateDefault() (err error) {
 			},
 		},
 		WebServer: &WebServerConfig{
-			Addr: ":80",
+			Addr:       ":80",
+			DefaultURL: "https://github.com/gme-sh/gme.sh-api",
 		},
 	})
 	if err != nil {

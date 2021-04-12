@@ -42,7 +42,8 @@ type DatabaseConfig struct {
 
 // WebServerConfig -> Config for web.WebServer
 type WebServerConfig struct {
-	Addr string `env:"WEB_ADDR"`
+	Addr       string `env:"WEB_ADDR"`
+	DefaultURL string `env:"DEFAULT_URL"`
 }
 
 // MongoConfig -> Config for MongoDB implementation
